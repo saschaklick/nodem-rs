@@ -9,8 +9,12 @@ impl DOM {
         if node.framing() {
             let border_idx = self.styles[node.plot.style_idx as usize].border_idx;
             if border_idx < BORDER_MAX || border_idx == 254 {
+                #[cfg(feature = "ninepatch")]
                 let b = surface.media.get_border(media::Identifier::Index(border_idx));
-                Padding { n: p.n.saturating_add(b.n_h as i8) + 1, e: p.e.saturating_add(b.e_w as i8) + 1, s: p.s.saturating_add(b.s_h as i8) + 1, w: p.w.saturating_add(b.w_w as i8) + 1 }
+                #[cfg(feature = "ninepatch")]
+                return Padding { n: p.n.saturating_add(b.n_h as i8) + 1, e: p.e.saturating_add(b.e_w as i8) + 1, s: p.s.saturating_add(b.s_h as i8) + 1, w: p.w.saturating_add(b.w_w as i8) + 1 };
+                #[cfg(not(feature = "ninepatch"))]
+                p
             }else{
                 p
             }

@@ -1,0 +1,143 @@
+{
+	"version": "2.0.0",
+	"tasks": [							
+		{
+			"label": "example: construct (term)",
+			"type": "cargo",
+			"command": "run",
+			"args": [
+				"--example",
+				"construct",
+				"--features=term,vm,dom,ninepatch"
+			],
+			"env": {
+				"RUST_BACKTRACE": "1",
+				"NODEM_ARCH": "EXAMPLE"
+			},
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
+		{
+			"label": "example: parse (term)",
+			"type": "cargo",
+			"command": "run",
+			"args": [
+				"--example",
+				"parse",				
+				"--features=term,dom,xml"
+			],
+			"env": {
+				"RUST_BACKTRACE": "1",
+				"NODEM_ARCH": "EXAMPLE"
+			},
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
+		{
+			"label": "example: construct (ui)",
+			"type": "cargo",
+			"command": "run",
+			"args": [
+				"--example",
+				"construct",				
+				"--features=ui,dom"			
+			],
+			"env": {
+				"RUST_BACKTRACE": "1",
+				"NODEM_ARCH": "EXAMPLE"
+			},
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
+		{
+			"label": "example: parse (ui)",
+			"type": "cargo",
+			"command": "run",
+			"args": [
+				"--example",
+				"parse",				
+				"--features=ui,dom"			
+			],
+			"env": {
+				"RUST_BACKTRACE": "1",
+				"NODEM_ARCH": "EXAMPLE"
+			},
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
+		{
+			"label": "example: empty (ui)",
+			"type": "cargo",
+			"command": "run",
+			"args": [
+				"--example",
+				"empty",				
+				"--features=ui"			
+			],
+			"env": {
+				"RUST_BACKTRACE": "1",
+				"NODEM_ARCH": "EXAMPLE"
+			},
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
+		{
+			"label": "example: draw (ui)",
+			"type": "cargo",
+			"command": "run",
+			"args": [
+				"--example",
+				"draw",				
+				"--features=ui"			
+			],
+			"env": {
+				"RUST_BACKTRACE": "1",
+				"NODEM_ARCH": "EXAMPLE"
+			},
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
+		{
+			"label": "example: vm (ui)",
+			"type": "cargo",
+			"command": "run",
+			"args": [
+				"--example",
+				"vm",				
+				"--features=ui,vm"			
+			],
+			"env": {
+				"RUST_BACKTRACE": "1"
+			},
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
+		{
+			"label": "run tests",
+			"type": "cargo",
+			"command": "test",			
+			"args": [
+				"--lib",
+				"--features=std,xml,dom,ninepatch,vm,inspect,alloc",
+				"--",
+				"tests",
+				"--nocapture",
+				"--test-threads=1"
+			],
+			"env": {
+				"RUST_BACKTRACE": "1",
+				"NODEM_ARCH": "TEST"
+			},
+			"problemMatcher": [
+				"$rustc"
+			]
+		}		
+	]
+}

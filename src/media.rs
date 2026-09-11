@@ -1,4 +1,3 @@
-use cfg_block::cfg_block;
 use core::{ptr, slice};
 
 use crate::*;
@@ -260,16 +259,17 @@ pub mod program;
 #[cfg(feature = "inspect")]
 pub mod inspect;
 
-cfg_block! {
-    if #[cfg(feature = "std")] {
-        pub mod pkg;
-        pub mod image_gen;
-        pub mod font_gen;
-        #[cfg(feature = "ninepatch")]
-        pub mod border_gen;
-        pub mod page_gen;        
-        #[cfg(feature = "vm")]
-        pub mod program_gen;        
-    }else{}
-}
+
+#[cfg(feature= "std")]
+pub mod pkg;
+#[cfg(feature= "std")]
+pub mod image_gen;
+#[cfg(feature= "std")]
+pub mod font_gen;
+#[cfg(all(feature= "std", feature = "ninepatch"))]
+pub mod border_gen;
+#[cfg(all(feature= "std", feature = "ninepatch"))]
+pub mod page_gen;        
+#[cfg(all(feature= "std", feature = "vm"))]
+pub mod program_gen;        
 

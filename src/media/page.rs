@@ -61,7 +61,6 @@ impl Media {
 
 }
 
-#[cfg(all(feature = "xml", feature = "std"))]
 #[repr(u8)]
 pub enum PageInstruction {    
     DOM = 0,
@@ -80,7 +79,6 @@ pub enum PageInstruction {
     NodeFrame = 13,
 }
 
-#[cfg(all(feature = "xml", feature = "std"))]
 #[repr(u8)]
 pub enum PageDOMInstruction {
     DocumentStart = 0,

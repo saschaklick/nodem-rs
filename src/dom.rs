@@ -112,7 +112,8 @@ impl Default for DOM {
         styles: [Style::default(); STYLE_MAX as usize + 1],           
         style_idx: STYLE_INIT + 1,        
 
-        dummy_node: Node::default(),
+        dummy_node: Node::default(),        
+        #[cfg(feature = "alloc")]
         alloc_buf: DOMContainer { raw: core::ptr::null_mut(), len: 0 }
     } }
 }

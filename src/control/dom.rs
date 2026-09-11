@@ -9,7 +9,9 @@ impl IControl for DOM {
             let dom = self;            
             let ret = match line[1..].as_ref() {
                 "clear" => { dom.clear(); Ret::Ok },
+                #[cfg(all(feature = "xml", feature = "dom"))]
                 "xml" => { dom.to_xml(res, Some(" "), false).expect(""); Ret::Ok }
+                #[cfg(feature = "inspect")]
                 "inspect" => { dom.inspect(res).expect(""); Ret::Ok }
                 _ => {                    
                     let split_p = line.find("=").unwrap_or(line.len());

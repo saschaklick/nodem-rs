@@ -48,7 +48,7 @@ impl RuntimePrivate {
     }        
 }
 
-pub static PKG_SYS: &'static [u8] = include_bytes!("../../nodem-pkg/pkg/sys.pkg");
+pub static PKG_SYS: &'static [u8] = include_bytes!("sys.pkg");
 
 pub trait Runtime {
     fn run(&mut self) -> bool;

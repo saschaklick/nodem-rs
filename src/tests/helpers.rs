@@ -5,7 +5,7 @@ use crate::{Size, surface::Surface, dom::DOM};
 
 use bitmap_writer::{Style, Frame, Bitmap, Writer};
 
-pub static PKG_SYS: &'static [u8] = include_bytes!("../../../nodem-pkg/pkg/sys.pkg");
+pub static PKG_SYS: &'static [u8] = include_bytes!("sys.pkg");
 
 pub struct SurfaceTest {}
 impl SurfaceTest {

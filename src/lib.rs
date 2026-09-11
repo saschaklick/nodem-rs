@@ -1,8 +1,6 @@
 #![no_std]
 #![allow(static_mut_refs)]
 
-use cfg_block::cfg_block;
-
 pub use i16 as PosX;
 pub use i16 as PosY;
 pub use u16 as SizeW;
@@ -52,13 +50,12 @@ pub const ID_MAX:        IdIdx       = 10;
 pub const DOM_DEPTH_MAX: usize       = 8;
 
 pub mod surface;
-cfg_block! {
-    if #[cfg(feature = "dom")] {
-        pub mod dom;
-        pub mod plot;
-        pub mod node;
-    }else{}
-}
+#[cfg(feature = "dom")]
+pub mod dom;
+#[cfg(feature = "dom")]
+pub mod plot;
+#[cfg(feature = "dom")]
+pub mod node;
 pub mod control;
 pub mod media;
 pub mod runtime;

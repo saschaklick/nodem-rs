@@ -20,7 +20,7 @@ impl Surface {
     #[cfg(feature = "inspect")]
     fn update_positions(dom: &mut DOM, positions: NodePosition) { dom.positions = positions; }
     #[cfg(not(feature = "inspect"))]
-    fn update_positions(dom: &mut DOM, positions: NodePosition) {}
+    fn update_positions(_dom: &mut DOM, _positions: NodePosition) {}
 
     pub fn fullscreen(&self, dom: &mut DOM) {
         if NODE_MAX > 0 {
