@@ -28,7 +28,7 @@ impl Example {
         match repeat_cnt {                        
             0  => { self.dom.from(surface.media.get_page(253).content); }
             0 .. 64 => { self.dom.node_ref_mut(2).set_height(repeat_cnt as SizeH); }
-            72 => { self.dom.from(surface.media.get_page(254).content); }
+            72 => { self.dom.from(surface.media.get_page(1).content); }
             _ => {}
         }        
 
