@@ -9,7 +9,7 @@ impl IControl for DOM {
             let dom = self;            
             let ret = match line[1..].as_ref() {
                 "clear" => { dom.clear(); Ret::Ok },
-                #[cfg(all(feature = "xml", feature = "dom"))]
+                #[cfg(all(feature = "xml", feature = "dom", feature = "inspect"))]
                 "xml" => { dom.to_xml(res, Some(" "), false).expect(""); Ret::Ok }
                 #[cfg(feature = "inspect")]
                 "inspect" => { dom.inspect(res).expect(""); Ret::Ok }

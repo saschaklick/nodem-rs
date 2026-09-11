@@ -96,6 +96,7 @@ impl Media {
                 log::info!("fnt #{}.{} [{:5}b]", font.source, i, 0);
             }
         }                
+        #[cfg(feature = "dom")]
         for i in 0 .. 255 {
             let page = self.get_page(i);
             if page.source != 255 {                
@@ -253,6 +254,7 @@ pub mod image;
 #[cfg(feature = "ninepatch")]
 pub mod border;
 pub mod font;
+#[cfg(feature = "dom")]
 pub mod page;
 #[cfg(feature = "vm")]
 pub mod program;

@@ -19,8 +19,8 @@ use nodem_rs::node::*;
 use nodem_rs::media::Identifier;
 use nodem_rs::surface::*;
 
-pub static PKG_SYS: &'static [u8] = include_bytes!("sys.pkg");
-pub static PKG_INT: &'static [u8] = include_bytes!("int.pkg");
+pub static PKG_SYS: &'static [u8] = include_bytes!("../../pkg/sys.pkg");
+pub static PKG_INT: &'static [u8] = include_bytes!("../../pkg/int.pkg");
 
 impl Example {
     pub fn init(self: &mut Self, surface: &mut Surface) {

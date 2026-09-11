@@ -172,7 +172,7 @@ impl DOM {
         return Ret::NoAllocFeature;
     }
 
-    #[cfg(all(feature = "dom", feature = "xml", feature = "inspect"))]
+    #[cfg(all(feature = "dom", feature = "xml"))]
     pub fn from_xml(&mut self, xml: &str) -> Ret {        
         self.alloc_buf.raw = unsafe{ if self.alloc_buf.raw.is_null() {
                 alloc(Layout::from_size_align(xml.len(), 4).unwrap())

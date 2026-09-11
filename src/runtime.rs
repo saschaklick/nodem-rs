@@ -24,6 +24,7 @@ impl RuntimePrivate {
         }
     }
 
+    #[cfg(feature = "dom")]
     fn _intro_with_dom (surface: &mut Surface, dom: &mut dom::DOM, loop_cnt: usize) -> bool {
         match loop_cnt {                     
             0       => { dom.from(surface.media.get_page(SYS_LOGO).content); dom.node_ref_mut(2).set_height(0); }
@@ -58,6 +59,7 @@ pub trait Runtime {
     fn process_command(&mut self, input: &[u8], res: &mut dyn core::fmt::Write, external_listener: &mut dyn IControl) -> (usize, core::fmt::Result);
 }
 
+#[cfg(feature = "dom")]
 pub struct DOM {
     loop_cnt: usize,    
     
@@ -65,6 +67,8 @@ pub struct DOM {
     pub dom: dom::DOM,    
     pub control: Option<Control>
 }
+
+#[cfg(feature = "dom")]
 impl DOM {
     pub fn new(buf: & mut [u8], width: SizeW, height: SizeH) -> Self {
         Self {
@@ -76,6 +80,7 @@ impl DOM {
     }    
 }
 
+#[cfg(feature = "dom")]
 impl Runtime for DOM {
     fn run(&mut self) -> bool {
         if self.loop_cnt == 0 {

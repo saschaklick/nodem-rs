@@ -26,6 +26,7 @@ virtmach = { git = "https://github.com/saschaklick/virtmach-rs", features = ["i1
 
 [dev-dependencies]
 simple_logger = "5.0.0"
+bytes = { version = "1.10.1" }
 tokio = { version = "1.45.1", features = ["full"] }
 sdl2 = { version = "0.37.0" }
 bitmap_writer = { version = "0.1.2", features = ["std"] }

@@ -1,16 +1,15 @@
-use cfg_block::cfg_block;
-
-cfg_block! {
-    if #[cfg(feature = "ui")] {
-        #[path = "../../impl/sdl2.rs"]
-        mod sdl2;
-        use sdl2::Example;
-    } else {
-        #[path = "../../impl/term.rs"]        
-        mod term;
-        use term::Example;
-    }
-}
+#[cfg(feature = "ui")]
+#[path = "../../impl/sdl2.rs"]
+#[cfg(feature = "ui")]
+mod sdl2;
+#[cfg(feature = "ui")]
+use sdl2::Example;
+#[cfg(not(feature = "ui"))]
+#[path = "../../impl/term.rs"]        
+#[cfg(not(feature = "ui"))]
+mod term;
+#[cfg(not(feature = "ui"))]
+use term::Example;
 
 use nostd_structs::algos::rand::lcg::LcgRng;
 use std::time::{SystemTime};
@@ -19,7 +18,7 @@ use nodem_rs::*;
 use nodem_rs::media::Identifier;
 use nodem_rs::surface::*;
 
-pub static PKG_SYS: &'static [u8] = include_bytes!("../../../nodem-pkg/pkg/sys.pkg");
+pub static PKG_SYS: &'static [u8] = include_bytes!("../../pkg/sys.pkg");
 
 static mut POINT: Point = Point { x: 0, y: 0 };
 static mut FPS_CNT: u32 = 0;

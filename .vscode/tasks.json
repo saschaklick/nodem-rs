@@ -1,6 +1,6 @@
 {
 	"version": "2.0.0",
-	"tasks": [							
+	"tasks": [
 		{
 			"label": "example: construct (term)",
 			"type": "cargo",
@@ -8,7 +8,7 @@
 			"args": [
 				"--example",
 				"construct",
-				"--features=term,vm,dom,ninepatch"
+				"--features=term,dom,ninepatch"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
@@ -24,8 +24,8 @@
 			"command": "run",
 			"args": [
 				"--example",
-				"parse",				
-				"--features=term,dom,xml"
+				"parse",
+				"--features=term,dom,xml,alloc"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
@@ -41,8 +41,8 @@
 			"command": "run",
 			"args": [
 				"--example",
-				"construct",				
-				"--features=ui,dom"			
+				"construct",
+				"--features=ui,dom,ninepatch"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
@@ -58,8 +58,8 @@
 			"command": "run",
 			"args": [
 				"--example",
-				"parse",				
-				"--features=ui,dom"			
+				"parse",
+				"--features=ui,dom,xml,alloc"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
@@ -75,8 +75,8 @@
 			"command": "run",
 			"args": [
 				"--example",
-				"empty",				
-				"--features=ui"			
+				"empty",
+				"--features=ui"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
@@ -92,8 +92,8 @@
 			"command": "run",
 			"args": [
 				"--example",
-				"draw",				
-				"--features=ui"			
+				"draw",
+				"--features=ui"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
@@ -109,8 +109,8 @@
 			"command": "run",
 			"args": [
 				"--example",
-				"vm",				
-				"--features=ui,vm"			
+				"vm",
+				"--features=ui,vm"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1"
@@ -122,7 +122,7 @@
 		{
 			"label": "run tests",
 			"type": "cargo",
-			"command": "test",			
+			"command": "test",
 			"args": [
 				"--lib",
 				"--features=std,xml,dom,ninepatch,vm,inspect,alloc",
@@ -138,6 +138,22 @@
 			"problemMatcher": [
 				"$rustc"
 			]
-		}		
+		},
+		{
+			"label": "example: vm (ui)",
+			"type": "cargo",
+			"command": "run",
+			"args": [
+				"--example",
+				"vm",
+				"--features=ui,vm"
+			],
+			"env": {
+				"RUST_BACKTRACE": "1"
+			},
+			"problemMatcher": [
+				"$rustc"
+			]
+		}
 	]
 }
