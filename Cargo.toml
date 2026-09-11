@@ -1,0 +1,33 @@
+[package]
+name = "nodem-rs"
+version = "0.1.1"
+edition = "2021"
+authors = ["Sascha Klick"]
+
+[features]
+std=["bytes", "virtmach/std"]
+inspect = []
+dom = []
+xml = []
+ninepatch = []
+alloc = []
+vm = ["virtmach"]
+compile = ["vm", "alloc", "virtmach/compile"]
+ui = []
+term = []
+base = ["dom", "xml", "ninepatch", "inspect"]
+
+[dependencies]
+log = { version = "0.4.27", features = ["max_level_debug"] }
+bytes = { version = "1.10.1", optional = true }
+cfg_block = "0.2.0"
+nostd = "0.1.6"
+nostd_structs = "0.5.0"
+virtmach = { git = "https://github.com/saschaklick/virtmach-rs", features = ["i16", "random"], optional = true }
+
+[dev-dependencies]
+simple_logger = "5.0.0"
+tokio = { version = "1.45.1", features = ["full"] }
+sdl2 = { version = "0.37.0" }
+bitmap_writer = { version = "0.1.2", features = ["std"] }
+test-log = "0.2.19"

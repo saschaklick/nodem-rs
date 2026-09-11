@@ -1,0 +1,51 @@
+use crate::media::*;
+use crate::image::*;
+use crate::stream::*;
+
+pub static PKG: [u8; 54] = [
+    b'P', b'K', b'G', b'0',
+    47, 0, 0, 0,
+
+    LIBMAGIC_IMAGE,
+    43, 0,
+
+    0,
+    12, 0,
+    9, 0,
+    ImageType::Indexed1 as u8,
+    8,
+    8,
+    Encoding::Raw as u8,
+    0b10000000,
+    0b11000000,
+    0b10100000,
+    0b10010000,
+    0b10001000,
+    0b11001100,
+    0b00110000,
+    0b00011000,
+    Encoding::Raw as u8,
+    0b10000000,
+    0b11000000,
+    0b11100000,
+    0b11110000,
+    0b11111000,
+    0b11111100,
+    0b00110000,
+    0b00011000,
+    1,
+    11, 0,
+    0, 0,
+    ImageType::Indexed1 as u8,
+    8,
+    7,
+    Encoding::Raw as u8,
+    0b00111000,
+    0b01000100,
+    0b01000100,
+    0b10000010,
+    0b01000010,
+    0b01000100,
+    0b00111000,
+    LIBMAGIC_EOL
+];
