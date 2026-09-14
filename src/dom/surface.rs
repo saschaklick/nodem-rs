@@ -54,10 +54,10 @@ impl Surface {
                 }else{
                     let position = &positionings.areas[n_i as usize]; 
                     let mut p = position.0.point;        
-                    let mut s  = position.0.size;
-                    let c      = position.1;
+                    let mut s = position.0.size;
+                    let c     = position.1;
 
-                    let margin = dom.margins[node.plot.margin_idx as usize];                    
+                    let margin = dom.margins[node.plot.margin_idx as usize];                                        
                     let style = dom.styles[node.plot.style_idx as usize];
                                         
                     log::trace!(" #{n_i:02} {} => [{:3}, {:3}] ({:3}, {:3})", node, s.width, s.height, p.x, p.y);                    
@@ -78,8 +78,8 @@ impl Surface {
                             y : cmp::min( clip_p.p1.y, p.y.checked_add(s.height as PosY).unwrap_or(PosY::MAX))
                         }
                     };
-                    if p_i < DOM_DEPTH_MAX as usize - 1 {                        
-                        let pad = dom.paddings[node.plot.padding_idx as usize];
+                    if p_i < DOM_DEPTH_MAX as usize - 1 {                                                
+                        let pad = dom.full_padding(*node, self);
                         
                         p_clips[p_i + 1] = Clip {
                             p0 : Point {
