@@ -1,4 +1,4 @@
-use crate::{surface::Surface, control::IControlLoader};
+use crate::{control::{IControlLoader, LoaderRet}, surface::Surface, media };
 
 const MEDIA_SIZE: usize = 1024 * 8;
 
@@ -15,7 +15,12 @@ impl IControlLoader for Surface {
         }
     }
 
-    fn process_loader_end(&mut self) -> u8 {        
-        return self.media.load_pkg(unsafe { MEDIA_PKG.as_ptr() }, unsafe { MEDIA_PKG.len() }, 2) as u8;     
+    fn process_loader_end(&mut self) -> LoaderRet {        
+        let ret = self.media.load_pkg(unsafe { MEDIA_PKG.as_ptr() }, unsafe { MEDIA_PKG.len() }, 2);     
+        match ret {
+            media::Ret::Ok => LoaderRet::Ok,
+            _ => LoaderRet::PKGFailed
+
+        }
     }
 }

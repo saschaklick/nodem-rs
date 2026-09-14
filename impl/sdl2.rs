@@ -144,7 +144,7 @@ impl SDL2Window {
             let cursor = Point { x: (mouse_x as i32 / SCALE as i32) as PosX, y: (mouse_y as i32 / SCALE as i32) as PosY };
             
             if control.is_loader_busy() {
-                nodem_surface.draw_progress_screen(control.get_loader_progress(255).take().unwrap().try_into().unwrap(), control.get_loader_error());                
+                nodem_surface.draw_progress_screen(control.get_loader_progress(255).take().unwrap().try_into().unwrap(), control.get_loader_error() as u8);                
             }else{
                 let action =
                     if mouse_s & 0b1 == 1 && mouse_p & 0b1 == 0 { 1 } else

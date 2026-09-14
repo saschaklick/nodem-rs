@@ -155,7 +155,7 @@ impl Surface {
         }
     }
 
-    pub fn draw_progress_screen(&self, progress:u8, state: u8) {
+    pub fn draw_progress_screen(&self, progress: u8, state: u8) {
         self.clear(0);
             
         if progress < u8::MAX {

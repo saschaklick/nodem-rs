@@ -1,4 +1,4 @@
-use crate::{ surface::Surface, media::Media };
+use crate::{ surface::Surface, media::{ Media } };
 
 mod surface;
 mod media;
@@ -15,15 +15,26 @@ pub enum ControlMode {
 
 #[repr(u8)]
 enum Ret {
+    Ok = 0,        
+    UnknownCommand = 1 
+}
+
+#[repr(u8)]
+#[derive(Clone)]
+#[derive(Copy)]
+pub enum LoaderRet {
     Ok = 0,
-    UnknownCommand = 1
+    CTR = 1,
+    Aborted = 2,
+    NotEnoughSpace = 3,
+    PKGFailed = 4
 }
 
 struct Loader {
     state: u8,
     size: usize,
     position: usize,    
-    error: u8
+    error: LoaderRet
 }
 
 pub struct Control {
@@ -33,20 +44,27 @@ pub struct Control {
 impl Default for Control {
     fn default() -> Self { Self {
         mode : ControlMode::LineMode,
-        loader : Loader { state: 0, size: 0, position: 0, error: 0 }
+        loader : Loader { state: 0, size: 0, position: 0, error: LoaderRet::Ok }
     } }
 }
 
 impl Control {
     pub fn is_loader_busy(&self) -> bool {
-        return self.loader.state != 0 || self.loader.error != 0;
+        match self.loader.error {
+            LoaderRet::Ok => self.loader.state != 0,
+            _ => true
+        }         
+    }
+    
+    pub fn get_loader_cts(&self) -> bool {
+        self.loader.state == 4 && self.loader.position == 0
     }
     
     pub fn get_loader_progress(&self, range: usize) -> Option<usize> {
-        return if self.loader.state == 0 { None } else { Some(range * self.loader.position / self.loader.size) };
+        if self.loader.state == 0 { None } else { Some(range * self.loader.position / self.loader.size) }
     }
     
-    pub fn get_loader_error(&self) -> u8 {
+    pub fn get_loader_error(&self) -> LoaderRet {
         self.loader.error
     }
 
@@ -55,7 +73,7 @@ impl Control {
         self.loader.state = 0;
         self.loader.position = 0;
         self.loader.size = 0;
-        self.loader.error = 10;
+        self.loader.error = LoaderRet::Aborted;
     }
 
     pub fn process <'a>(&mut self, buf: &[u8], surface: &mut Surface, listeners: &mut [Option<&mut dyn IControl>;4], res: &mut dyn core::fmt::Write) -> (usize, core::fmt::Result) {
@@ -77,7 +95,7 @@ impl Control {
                                 #[cfg(feature = "std")]
                                 res.write_str("std").expect("");                                        
                                 #[cfg(not(feature = "std"))]
-                                res.write_str("core");                                           
+                                res.write_str("core").expect("");                                           
                                 res.write_str(",control").expect("");                                        
                                 #[cfg(feature = "inspect")]                             
                                 res.write_str(",inspect").expect("");                                                                                                                                                                  
@@ -138,10 +156,15 @@ impl Control {
                         match self.loader.state {                    
                             0..=2 => { self.loader.size += (byte as usize) << 8 * self.loader.state; self.loader.state += 1; },                            
                             3 => {
-                                self.loader.size += (byte as usize) << 24;
-                                self.loader.state = 4;                                      
-                                listener.process_loader_start(self.loader.size);                                    
-                                log::info!("loader start: {}b", self.loader.size);
+                                if listener.process_loader_start(self.loader.size) > 0 { 
+                                    self.loader.size += (byte as usize) << 24;
+                                    self.loader.state = 4;                                                                                                          
+                                    log::info!("loader start: {}b", self.loader.size);
+                                    Control::send_result("pkg", LoaderRet::CTR as u8, res).1.expect("");
+                                }else{
+                                    self.loader.error = LoaderRet::NotEnoughSpace;
+                                    Control::send_result("pkg", LoaderRet::NotEnoughSpace as u8, res).1.expect("");
+                                }
                             },
                             4 => {                                
                                 listener.process_loader_data(&[byte;1], self.loader.position);                                            
@@ -152,7 +175,7 @@ impl Control {
                                         self.mode = ControlMode::LineMode;
                                         self.loader.state = 0;
                                         self.loader.size = 0;                                                                                                                                                                                                
-                                        self.loader.error = listener.process_loader_end();                                                                                                                                                                
+                                        self.loader.error = listener.process_loader_end();                                                                                                                                                                        
                                         Control::send_result("pkg", self.loader.error as u8, res).1.expect("");
                                     }
                                     _ => {}
@@ -183,11 +206,11 @@ pub trait IControl {
 }
 
 pub trait IControlLoader {
-    fn process_loader_start(&mut self, _len: usize) -> usize { return 0; }
+    fn process_loader_start(&mut self, _len: usize) -> usize { 0 }
     
     fn process_loader_data(&mut self, _buf: &[u8], _pos: usize) {}
     
-    fn process_loader_end(&mut self) -> u8 { return 0; }    
+    fn process_loader_end(&mut self) -> LoaderRet { LoaderRet::Ok }    
 }
 impl IControl for dyn IControlLoader {
     fn get_loader(&mut self) -> Option<&mut dyn IControlLoader> { Some(self) }
