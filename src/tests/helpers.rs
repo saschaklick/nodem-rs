@@ -1,7 +1,9 @@
 #[cfg(test)]
 extern crate std;
 
-use crate::{Size, surface::Surface, dom::DOM};
+use crate::{Size, surface::Surface};
+#[cfg(feature = "dom")]
+use crate::{ dom:: DOM };
 
 use bitmap_writer::{Style, Frame, Bitmap, Writer};
 
@@ -20,7 +22,9 @@ impl SurfaceTest {
     }
 }
 
+#[cfg(feature = "dom")]
 pub struct DOMTest {}
+#[cfg(feature = "dom")]
 impl DOMTest {
     pub fn run<F>(size: Size, mut func:F, expected: &str) -> bool where F: FnMut(&mut DOM) {
         let mut generated = std::vec![0u8;(size.width as usize * size.height as usize + 7) / 8];        
