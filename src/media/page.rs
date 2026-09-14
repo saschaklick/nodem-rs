@@ -1,4 +1,5 @@
 use crate::media::*;
+#[cfg(all(feature = "xml", feature = "std"))]
 use crate::node::*;
 
 pub use u8 as PageIdx;
