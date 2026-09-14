@@ -119,7 +119,7 @@ impl Media {
         self.clear_border();
         #[cfg(feature = "std")]
         self.clear_font();
-        #[cfg(feature = "std")]
+        #[cfg(all(feature = "std", feature = "dom"))]
         self.clear_pages();
         #[cfg(all(feature = "std", feature = "vm"))]
         self.clear_programs();

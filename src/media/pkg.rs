@@ -2,7 +2,6 @@ use log;
 use core::fmt::Write;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
-use crate::*;
 use crate::media::*;
 use crate::media::font::*;
 
@@ -199,6 +198,7 @@ impl Media {
         }
         borders_lib.put_u8(0xff);
 
+        #[cfg(feature = "dom")]
         for index in 0 ..= 255 - 2 {
             let page = self.get_page(index);                 
             if (page.source >= LIBRARY_MAX) || page.content.len() == 0 || ((1u8 << page.source) & sources) == 0 {
