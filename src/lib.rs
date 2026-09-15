@@ -58,6 +58,8 @@ pub mod plot;
 pub mod node;
 pub mod control;
 pub mod media;
+
+#[cfg(feature = "runtime")]
 pub mod runtime;
 
 #[cfg(feature = "vm")]
