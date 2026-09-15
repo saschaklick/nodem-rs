@@ -3,6 +3,9 @@ name = "nodem-rs"
 version = "0.1.1"
 edition = "2021"
 authors = ["Sascha Klick"]
+repository = "https://github.com/saschaklick/nodem-rs"
+description = "Rust implementation of the nodem UI rendering framework"
+license = "MIT"
 
 [features]
 std=["bytes", "virtmach/std"]
