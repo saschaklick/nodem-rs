@@ -17,4 +17,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4    
     - name: Run tests
-      run: cargo test --lib --features=std,xml,dom,ninepatch,vm,inspect,alloc -- tests --nocapture --test-threads=1      
+      run: cargo test --lib --features=std,xml,dom,ninepatch,vm,inspect,alloc -- tests --nocapture --test-threads=1
+      env : 
+        NODEM_ARCH: test      
