@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  NODEM_ARCH: test      
 
 jobs:
   build:
@@ -18,5 +19,4 @@ jobs:
     - uses: actions/checkout@v4    
     - name: Run tests
       run: cargo test --lib --features=std,xml,dom,ninepatch,vm,inspect,alloc -- tests --nocapture --test-threads=1
-      env : 
-        NODEM_ARCH: test      
+        
