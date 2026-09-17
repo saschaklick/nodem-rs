@@ -97,8 +97,8 @@ impl Runtime for DOM {
                 self.surface.update(&mut self.dom); 
                 // let x = (self.surface.width as f32 / 2.0) + (((self.loop_cnt as f32) / 10.0).cos() * self.surface.width as f32 / 2.5);
                 // let y = (self.surface.height as f32 / 2.0) + (((self.loop_cnt as f32) / 10.0).sin() * self.surface.height as f32 / 2.5);
-                let x = 16.0 + (((self.loop_cnt as f32) / 10.0).cos() * 16.0);
-                let y = 0.0 + (((self.loop_cnt as f32) / 17.0).sin() * 8.0);
+                let x = 16.0 + (libm::cosf((self.loop_cnt as f32) / 10.0) * 16.0);
+                let y = 0.0 + (libm::sinf((self.loop_cnt as f32) / 17.0) * 8.0);
                 RuntimePrivate::cursor(&mut self.surface, Point { x: x as PosX, y: y as PosY });
             }
 
