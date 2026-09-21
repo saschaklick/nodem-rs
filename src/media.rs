@@ -156,7 +156,7 @@ impl Media {
         }        
 
         loop {                
-            if reader.available() >= MEDIALIB_HEADER_SIZE {
+            if reader.available() >= 1 {
                 let media_id = reader.read_u8();                                    
                 if reader.ok == false {
                     log::error!("short media id read");
