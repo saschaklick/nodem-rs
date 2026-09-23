@@ -174,12 +174,12 @@ impl Control {
                                 self.loader.position += 1;
                                 match self.loader.size - self.loader.position {                                    
                                     0 => {
-                                        log::info!("loader end ({}): {}b", self.get_mode_name(), self.loader.size);
-                                        self.mode = ControlMode::LineMode;
+                                        log::info!("loader end ({}): {}b", self.get_mode_name(), self.loader.size);                                        
                                         self.loader.state = 0;
                                         self.loader.size = 0;                                                                                                                                                                                                
                                         self.loader.error = listener.process_loader_end();                                                                                                                                                                        
                                         Control::send_result( self.get_mode_name(), self.loader.error as u8, res).1.expect("");
+                                        self.mode = ControlMode::LineMode;
                                     }
                                     _ => {}
                                 }                                                                                                                               
