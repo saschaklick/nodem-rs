@@ -8,9 +8,11 @@ mod dom;
 mod program;
 
 #[derive(PartialEq)]
+#[derive(Clone, Copy)]
 pub enum ControlMode {
     LineMode,
-    PKGMode        
+    PKGMode,
+    OTAMode      
 }
 
 #[repr(u8)]
@@ -27,7 +29,8 @@ pub enum LoaderRet {
     CTR = 1,
     Aborted = 2,
     NotEnoughSpace = 3,
-    PKGFailed = 4
+    PKGFailed = 4,
+    UnsupportedMode = 5
 }
 
 struct Loader {
@@ -112,11 +115,11 @@ impl Control {
                                 res.write_str("\r\n").expect("");                                
                                 Control::send_result("", Ret::Ok as u8, res).0;
                             },
-                            "pkg" => {
-                                self.mode = ControlMode::PKGMode;
+                            "pkg"|"ota" => {
+                                self.mode = if line == "ota" { ControlMode::OTAMode } else { ControlMode::PKGMode };
                                 self.loader.position = 0;
                                 self.loader.size = 0;  
-                                log::info!("loader init");                                      
+                                log::info!("loader init ({})", self.get_mode_name());                                      
                             }
                             _ => {                                
                                 let mut ret = surface.process_line(line, &Media::default(), res);
@@ -139,7 +142,7 @@ impl Control {
                         return (buf_pos, Ok(()));
                     }
                 },
-                ControlMode::PKGMode => {     
+                ControlMode::PKGMode | ControlMode::OTAMode => {     
                     let mut listener: &mut dyn IControlLoader = surface.get_loader().unwrap();
                     for target in &mut * listeners {
                         if target.is_some() {                                                                     
@@ -155,15 +158,15 @@ impl Control {
                         buf_pos += 1;                        
                         match self.loader.state {                    
                             0..=2 => { self.loader.size += (byte as usize) << 8 * self.loader.state; self.loader.state += 1; },                            
-                            3 => {
-                                if listener.process_loader_start(self.loader.size) > 0 { 
+                            3 => {                                
+                                if listener.process_loader_start(self.mode, self.loader.size) > 0 { 
                                     self.loader.size += (byte as usize) << 24;
                                     self.loader.state = 4;                                                                                                          
-                                    log::info!("loader start: {}b", self.loader.size);
-                                    Control::send_result("pkg", LoaderRet::CTR as u8, res).1.expect("");
+                                    log::info!("loader start ({}): {}b", self.get_mode_name(), self.loader.size);
+                                    Control::send_result( self.get_mode_name(), LoaderRet::CTR as u8, res).1.expect("");
                                 }else{
                                     self.loader.error = LoaderRet::NotEnoughSpace;
-                                    Control::send_result("pkg", LoaderRet::NotEnoughSpace as u8, res).1.expect("");
+                                    Control::send_result( self.get_mode_name(), LoaderRet::NotEnoughSpace as u8, res).1.expect("");
                                 }
                             },
                             4 => {                                
@@ -171,12 +174,12 @@ impl Control {
                                 self.loader.position += 1;
                                 match self.loader.size - self.loader.position {                                    
                                     0 => {
-                                        log::info!("loader end: {}b", self.loader.size);
+                                        log::info!("loader end ({}): {}b", self.get_mode_name(), self.loader.size);
                                         self.mode = ControlMode::LineMode;
                                         self.loader.state = 0;
                                         self.loader.size = 0;                                                                                                                                                                                                
                                         self.loader.error = listener.process_loader_end();                                                                                                                                                                        
-                                        Control::send_result("pkg", self.loader.error as u8, res).1.expect("");
+                                        Control::send_result( self.get_mode_name(), self.loader.error as u8, res).1.expect("");
                                     }
                                     _ => {}
                                 }                                                                                                                               
@@ -197,6 +200,14 @@ impl Control {
         res.write_str("\r\n").expect("");
         (true, Ok(()))
     }     
+
+    pub fn get_mode_name(&self) -> &str {
+        match self.mode {
+            ControlMode::LineMode => "line",
+            ControlMode::PKGMode => "pkg",
+            ControlMode::OTAMode => "ota"            
+        }        
+    }
 }
 
 pub trait IControl {
@@ -206,7 +217,7 @@ pub trait IControl {
 }
 
 pub trait IControlLoader {
-    fn process_loader_start(&mut self, _len: usize) -> usize { 0 }
+    fn process_loader_start(&mut self, _mode: ControlMode, _len: usize) -> usize { 0 }
     
     fn process_loader_data(&mut self, _buf: &[u8], _pos: usize) {}
     

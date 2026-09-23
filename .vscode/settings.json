@@ -1,0 +1,8 @@
+{
+    "rust-analyzer.cargo.features": [
+        "full",        
+    ],
+    "rust-analyzer.cargo:extraEnv": {
+        "NODEM_ARCH" : "rust-analyzer",        
+    }
+}

@@ -5,10 +5,11 @@ use crate::control::*;
 #[cfg(feature = "vm")]
 use virtmach::VirtMach;
 
-struct RuntimePrivate {}
+struct RuntimePrivate {
+}
 
 impl RuntimePrivate {
-    const INTRO_WAIT: usize = 16;
+    const INTRO_WAIT: usize = 16;  
 
     fn intro (surface: &mut Surface, loop_cnt: usize) -> bool {                
         if loop_cnt < surface.height as usize + RuntimePrivate::INTRO_WAIT {
@@ -35,6 +36,17 @@ impl RuntimePrivate {
         true
     }
 
+    fn popup (surface: &mut Surface, message: &str) {                    
+        let font = 0;        
+        let text_size = surface.get_text_size(Identifier::Index(font), message);
+        let size = Size { width: surface.width, height: text_size.height.saturating_add(8) };
+        //let point = Point { x: (surface.width / 2).saturating_sub(size.width / 2) as PosX, y: (surface.height / 2).saturating_sub(size.height / 2) as PosY };
+        let point = Point { x: (surface.width / 2).saturating_sub(size.width / 2) as PosX, y: (surface.height).saturating_sub(size.height) as PosY };
+        surface.fill_rect(Area { point: Point { x: point.x, y: point.y }, size: Size { width: size.width, height: size.height } }, 0);
+        surface.draw_rect(Area { point: Point { x: point.x + 1, y: point.y + 1 }, size: Size { width: size.width - 2, height: size.height - 2 } }, 1);        
+        surface.draw_text(media::Identifier::Index(font), message, Point { x: 4, y: point.y + 4 });
+    }
+
     fn demo_popup (surface: &mut Surface, loop_cnt: usize) {            
         if (loop_cnt % 400) > 350 {
             let text = "DEMO";
@@ -46,7 +58,7 @@ impl RuntimePrivate {
 
     fn cursor (surface: &mut Surface, point: Point) {
         surface.draw_image(Identifier::Index(SYS_POINTER), point, None);
-    }        
+    }       
 }
 
 pub static PKG_SYS: &'static [u8] = include_bytes!("sys.pkg");
@@ -60,8 +72,9 @@ pub trait Runtime {
 }
 
 #[cfg(feature = "dom")]
-pub struct DOM {
-    loop_cnt: usize,    
+pub struct DOM <'a>{
+    loop_cnt: usize,
+    pub status_message: Option<&'a str>,
     
     pub surface: Surface,
     pub dom: dom::DOM,    
@@ -69,10 +82,11 @@ pub struct DOM {
 }
 
 #[cfg(feature = "dom")]
-impl DOM {
+impl DOM<'_> {
     pub fn new(buf: & mut [u8], width: SizeW, height: SizeH) -> Self {
         Self {
             loop_cnt: 0,
+            status_message: None,
             surface: Surface::new(buf, width, height),
             dom: dom::DOM::default(),
             control: Some(Control::default())
@@ -81,7 +95,7 @@ impl DOM {
 }
 
 #[cfg(feature = "dom")]
-impl Runtime for DOM {
+impl Runtime for DOM<'_> {
     fn run(&mut self) -> bool {
         if self.loop_cnt == 0 {
             self.surface.media.load_pkg(PKG_SYS.as_ptr(), PKG_SYS.len(), 0);
@@ -103,6 +117,10 @@ impl Runtime for DOM {
             }
 
             RuntimePrivate::demo_popup(&mut self.surface, self.loop_cnt);
+            
+            if self.status_message.is_some() {
+                RuntimePrivate::popup(&mut self.surface, self.status_message.unwrap());            
+            }
         }
 
         self.loop_cnt = self.loop_cnt.checked_add(1).unwrap_or(self.surface.height as usize + RuntimePrivate::INTRO_WAIT);       
@@ -116,10 +134,9 @@ impl Runtime for DOM {
 
     fn process_command(&mut self, input: &[u8], mut res: &mut dyn core::fmt::Write, external_listener: &mut dyn IControl) -> (usize, core::fmt::Result) {
         if self.control.is_some() {
-            let ret = self.control.as_mut().unwrap().process(input, &mut self.surface, &mut [Some(&mut self.dom), Some(external_listener), None, None], &mut res);
-            ret
+            self.control.as_mut().unwrap().process(input, &mut self.surface, &mut [Some(external_listener), Some(&mut self.dom), None, None], &mut res)           
         }else{
-            log::error!("no control available");
+            log::error!("no listener available");
             (input.len(), Ok(()))
         }        
     }
