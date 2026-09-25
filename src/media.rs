@@ -9,6 +9,7 @@ pub const SYS_FONT: u8    = 0;
 pub const SYS_POINTER: u8 = 252;
 pub const SYS_LOGO: u8    = 253;
 
+pub const LIBMAGIC_META:    u8 = 10;
 pub const LIBMAGIC_IMAGE:   u8 = 20;
 pub const LIBMAGIC_FONT:    u8 = 30;
 pub const LIBMAGIC_BORDER:  u8 = 40;
@@ -52,6 +53,7 @@ pub enum Ret {
 }
 
 pub struct Media {
+    pub meta: Library,
     pub images: [Library; LIBRARY_MAX as usize],        
     pub fonts: [Library; LIBRARY_MAX as usize],    
     pub borders: [Library; LIBRARY_MAX as usize],  
@@ -63,6 +65,7 @@ pub struct Media {
 }
 impl Default for Media {
     fn default() -> Self { Media {
+        meta: Library { data: ptr::null(), len: 0 },
         images: [Library { data: ptr::null(), len: 0 }; LIBRARY_MAX as usize],        
         fonts: [Library { data: ptr::null(), len: 0 }; LIBRARY_MAX as usize],        
         borders: [Library { data: ptr::null(), len: 0 }; LIBRARY_MAX as usize],        
@@ -179,6 +182,12 @@ impl Media {
                 let pos = reader.get_pos();
                 let lib_ptr = data[pos .. ].as_ptr();
                 let mut lib: &mut Library;
+                if media_id == LIBMAGIC_META {
+                    lib = &mut self.meta;
+                    lib.data = lib_ptr;
+                    lib.len = lib_length;                    
+                    log::info!("found meta #{} [{}b]", source, lib.len);                        
+                }
                 if media_id == LIBMAGIC_IMAGE {                    
                     if source  >= LIBRARY_MAX {
                         log::warn!("too many img libraries");
@@ -239,13 +248,22 @@ impl Media {
     }
 
     pub fn unload_pkg(&mut self) {
-        for i in 1 .. LIBRARY_MAX as usize {
+        self.meta.clear();
+        for i in 1 .. LIBRARY_MAX as usize {            
             self.images[i].clear();
             self.borders[i].clear();
             self.fonts[i].clear();
             self.pages[i].clear();
             #[cfg(feature = "vm")]
             self.programs[i].clear();
+        }
+    }
+
+    pub fn get_meta(&self) -> &str {
+        if self.meta.data != ptr::null() {
+            unsafe { str::from_utf8(slice::from_raw_parts(self.meta.data, self.meta.len)) }.unwrap_or("")
+        } else {
+            ""
         }
     }
 }

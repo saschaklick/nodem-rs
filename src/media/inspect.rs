@@ -6,6 +6,12 @@ impl Media {
             return (src == 255) && (source == 255 || source == src);
         };
         
+        csv.write_str("meta\r\n").expect("");
+        csv.write_fmt(format_args!(
+            "\"{}\"\r\n",
+            self.get_meta()
+        )).expect("");
+        
         csv.write_str("image_idx,id,source,type,width,height\r\n").expect("");        
         for image_idx in 0 .. 255 {
             let image = self.get_image(Identifier::Index(image_idx));

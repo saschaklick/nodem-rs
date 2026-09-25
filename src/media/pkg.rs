@@ -83,14 +83,14 @@ impl Media {
         }
     }
 
-    pub fn generate_pkg(self: &Media, sources: u8, optimize: bool) -> Bytes {
+    pub fn generate_pkg(self: &Media, sources: u8, meta: &str, optimize: bool) -> Bytes {        
         let mut images_lib = BytesMut::new();
         let mut fonts_lib = BytesMut::new();
         let mut borders_lib = BytesMut::new();
         let mut pages_lib = BytesMut::new();
         let mut programs_lib = BytesMut::new();
         let mut end_lib = BytesMut::new();
-        end_lib.put_u8(0xff);
+        end_lib.put_u8(0xff);        
 
         for index in 0 ..= 255 - 2 {
             let image = self.get_image(Identifier::Index(index));                 
@@ -226,6 +226,11 @@ impl Media {
         pkg.put_u32_ne(0);
         pkg.put_u16_ne(0);
         
+        if meta.len() > 0 {
+            pkg.put_u8(LIBMAGIC_META);    
+            pkg.put_u16_ne(meta.len() as u16);
+            pkg.put(meta.as_bytes());
+        }
         if images_lib.len() > 0 {
             pkg.put_u8(LIBMAGIC_IMAGE);
             pkg.put_u16_ne(images_lib.len() as u16);
