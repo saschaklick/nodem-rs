@@ -140,6 +140,8 @@ impl Surface {
         let mut p = p_0.clone();
     
         loop {
+            if steps_left == 0 { break; }
+            steps_left -= 1;
             self.draw_pixel(p, color);            
             let e2 = 2 * error;
             if e2 >= dy {
