@@ -3,13 +3,15 @@ use crate::surface::*;
 use crate::media::*;
 use crate::control::*;
 #[cfg(feature = "vm")]
-use virtmach::VirtMach;
+use virtmach::{self, VirtMach, interrupts::{ self, SoftInterrupt }};
+#[cfg(feature = "vm")]
+use crate::int_surface::IntSurface;
 
-struct RuntimePrivate {
+struct RuntimePrivate {    
 }
 
 impl RuntimePrivate {
-    const INTRO_WAIT: usize = 16;  
+    const INTRO_WAIT: usize = 16;    
 
     fn intro (surface: &mut Surface, loop_cnt: usize) -> bool {                
         if loop_cnt < surface.height as usize + RuntimePrivate::INTRO_WAIT {
@@ -71,30 +73,34 @@ pub trait Runtime {
     fn process_command(&mut self, input: &[u8], res: &mut dyn core::fmt::Write, external_listener: &mut dyn IControl) -> (usize, core::fmt::Result);
 }
 
-#[cfg(feature = "dom")]
 pub struct DOM <'a>{
     loop_cnt: usize,
     pub status_message: Option<&'a str>,
     
     pub surface: Surface,
+    #[cfg(feature = "dom")]
     pub dom: dom::DOM,    
-    pub control: Option<Control>
+    pub control: Option<Control>,
+
+    #[cfg(feature = "vm")]
+    pub vm: VirtMach<'a>,    
 }
 
-#[cfg(feature = "dom")]
 impl DOM<'_> {
     pub fn new(buf: & mut [u8], width: SizeW, height: SizeH) -> Self {
         Self {
             loop_cnt: 0,
             status_message: None,
             surface: Surface::new(buf, width, height),
+            #[cfg(feature = "dom")]
             dom: dom::DOM::default(),
-            control: Some(Control::default())
+            control: Some(Control::default()),
+            #[cfg(feature = "vm")]
+            vm: VirtMach::new(),                        
         }
     }    
 }
 
-#[cfg(feature = "dom")]
 impl Runtime for DOM<'_> {
     fn run(&mut self) -> bool {
         if self.loop_cnt == 0 {
@@ -107,8 +113,38 @@ impl Runtime for DOM<'_> {
                 let control = self.control.as_mut().unwrap();
                 self.surface.draw_progress_screen(control.get_loader_progress(255).take().unwrap().try_into().unwrap(), control.get_loader_error() as u8);            
             }else{
-                self.surface.clear(0);
-                self.surface.update(&mut self.dom); 
+                let clip = self.surface.clip;
+                #[cfg(feature = "vm")]
+                {                                                            
+                    self.surface.clip.reset(self.surface.width, self.surface.height);                                        
+
+                    let int0: &mut dyn SoftInterrupt = &mut interrupts::proc::Interrupt {};
+                    let int1: &mut dyn SoftInterrupt = &mut interrupts::math::Interrupt {};
+                    let int2: &mut dyn SoftInterrupt = &mut interrupts::string::Interrupt {};
+                    let int3: &mut dyn SoftInterrupt = &mut interrupts::random::Interrupt {};        
+                    let int4: &mut dyn SoftInterrupt = &mut IntSurface { surface: &mut self.surface };
+                    let mut interrupts = [int0, int1, int2, int3, int4];                    
+                                        
+                    self.vm.run(1024, &mut interrupts);                                                   
+                }
+                #[cfg(feature = "dom")]
+                {
+                    #[cfg(feature = "vm")]
+                    match self.vm.state {
+                        virtmach::Runtime::Ini | virtmach::Runtime::Stp => {
+                            self.surface.clear(0);
+                            self.surface.update(&mut self.dom); 
+                        }
+                        _ => {}
+                    }
+                    #[cfg(not(feature = "vm"))]
+                    {
+                        self.surface.clear(0);
+                        self.surface.update(&mut self.dom); 
+                    }
+                }
+                self.surface.clip = clip;
+                
                 // let x = (self.surface.width as f32 / 2.0) + (((self.loop_cnt as f32) / 10.0).cos() * self.surface.width as f32 / 2.5);
                 // let y = (self.surface.height as f32 / 2.0) + (((self.loop_cnt as f32) / 10.0).sin() * self.surface.height as f32 / 2.5);
                 let x = 16.0 + (libm::cosf((self.loop_cnt as f32) / 10.0) * 16.0);
@@ -133,8 +169,19 @@ impl Runtime for DOM<'_> {
     }
 
     fn process_command(&mut self, input: &[u8], mut res: &mut dyn core::fmt::Write, external_listener: &mut dyn IControl) -> (usize, core::fmt::Result) {
-        if self.control.is_some() {
-            self.control.as_mut().unwrap().process(input, &mut self.surface, &mut [Some(external_listener), Some(&mut self.dom), None, None], &mut res)           
+        if self.control.is_some() {            
+            self.control.as_mut().unwrap().process(input, &mut self.surface, &mut [
+                Some(external_listener),
+                #[cfg(not(feature = "dom"))]
+                None,
+                #[cfg(feature = "dom")]
+                Some(&mut self.dom),
+                #[cfg(not(feature = "vm"))]
+                None,
+                 #[cfg(feature = "vm")]
+                Some(&mut self.vm),
+                None
+            ], &mut res)           
         }else{
             log::error!("no listener available");
             (input.len(), Ok(()))
