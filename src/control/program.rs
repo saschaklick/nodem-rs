@@ -1,4 +1,4 @@
-use virtmach::VirtMach;
+use virtmach::{ self, VirtMach };
 use crate::{media::Media, control::{ Control, IControl }};
 
 #[repr(u8)]
@@ -19,8 +19,8 @@ impl IControl for VirtMach<'_> {
                 "pau" => { self.pause(); }
                 "rst" => { self.reset(); }
                 "unl" => { self.unload(); }
-                "run" => { todo!(); /*self.run(1024, &mut []);*/ }
-                "stp" => { todo!(); /*self.run(1, &mut []);*/ }                
+                "run" => { self.state = virtmach::Runtime::Run; }
+                "stp" => { self.state = virtmach::Runtime::Stp; }                
                 #[cfg(feature = "inspect")]
                 "ins" => { ins(self, res).expect(""); }
                 #[cfg(feature = "inspect")]
@@ -49,6 +49,7 @@ impl IControl for VirtMach<'_> {
     }          
 }
 
+#[cfg(feature = "inspect")]
 fn reg(vm: &VirtMach, res: &mut dyn core::fmt::Write) -> core::fmt::Result{    
     for (i, atom) in vm.registers.iter().enumerate() {                
         res.write_fmt(format_args!("{}", atom)).expect("");
@@ -57,6 +58,7 @@ fn reg(vm: &VirtMach, res: &mut dyn core::fmt::Write) -> core::fmt::Result{
     Ok(())
 }
 
+#[cfg(feature = "inspect")]
 fn mem(vm: &VirtMach, res: &mut dyn core::fmt::Write) -> core::fmt::Result{    
     for (i, atom) in vm.memory.iter().enumerate() {                
         res.write_fmt(format_args!("{}", atom)).expect("");
@@ -65,6 +67,7 @@ fn mem(vm: &VirtMach, res: &mut dyn core::fmt::Write) -> core::fmt::Result{
     Ok(())
 }
 
+#[cfg(feature = "inspect")]
 fn ins(vm: &VirtMach, res: &mut dyn core::fmt::Write) -> core::fmt::Result{        
     vm.inspect(res).expect("");
     Ok(())
