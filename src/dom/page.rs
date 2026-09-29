@@ -165,7 +165,7 @@ impl DOM {
         return err;            
     }
 
-    #[cfg(not(feature = "xml"))]
+    #[cfg(all(not(feature = "xml"), not(feature = "dom")))]
     pub fn from_xml (&mut self, _xml: &str) -> Ret {       
         self.clear();
         log::error!("xml feature disabled");
