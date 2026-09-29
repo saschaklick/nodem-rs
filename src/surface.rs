@@ -138,7 +138,8 @@ impl Surface {
         let sy = if p_0.y < p_1.y { 1 } else { -1 };
         let mut error = dx + dy;
         let mut p = p_0.clone();
-    
+        
+        let mut steps_left = 2 * (u16::MAX as u32 + 1);    
         loop {
             if steps_left == 0 { break; }
             steps_left -= 1;
