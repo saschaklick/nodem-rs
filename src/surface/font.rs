@@ -119,7 +119,9 @@ impl Surface {
 
                 if instruction[0] == 0 && instr_str.is_none() {
                     if typesetting.fixed_height {
-                        line_height = font.full_height as PosY;
+                        if line_height < font.full_height as PosY {
+                            line_height = font.full_height as PosY;
+                        }
                     }
 
                     match chr {
@@ -140,7 +142,9 @@ impl Surface {
                                 Alignment::Proportional => { typesetting.space_width as PosX }
                                 _ => { font.mono_width as PosX }
                             }.saturating_add(typesetting.glyph_spacing as PosX);                                         
-                            line_height = font.base_height as PosY;                            
+                            if line_height < font.base_height as PosY {
+                                line_height = font.base_height as PosY;                            
+                            }
                         }                        
                         _ => {
                             if chr == '{' {
