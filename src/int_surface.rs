@@ -56,6 +56,19 @@ impl SoftInterrupt for IntSurface <'_> {
                 }
                 
             }    
+            10 => {
+                let p = Point { x: vm.stack_pop() as PosX, y: vm.stack_pop() as PosY };                
+                let font_idx = vm.stack_pop();
+                let db_idx = vm.stack_pop();
+                self.surface.draw_text(Identifier::Index(font_idx as u8), vm.get_str(db_idx as u8), p);
+            }
+            15 => {
+                let font_idx = vm.stack_pop();
+                let db_idx = vm.stack_pop();
+                let size = self.surface.get_text_size(Identifier::Index(font_idx as u8), vm.get_str(db_idx as u8));
+                vm.stack_push(size.width as VMAtom);
+                vm.stack_push(size.height as VMAtom);
+            }
             16 => {
                 vm.stack_push(self.surface.width as VMAtom);
                 vm.stack_push(self.surface.height as VMAtom);
