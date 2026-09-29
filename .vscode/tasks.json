@@ -110,10 +110,11 @@
 			"args": [
 				"--example",
 				"vm",
-				"--features=ui,vm"
+				"--features=ui,dom,vm,compile,basic,alloc"
 			],
 			"env": {
-				"RUST_BACKTRACE": "1"
+				"RUST_BACKTRACE": "1",
+				"NODEM_ARCH": "EXAMPLE",
 			},
 			"problemMatcher": [
 				"$rustc"
@@ -138,22 +139,6 @@
 			"problemMatcher": [
 				"$rustc"
 			]
-		},
-		{
-			"label": "example: vm (ui)",
-			"type": "cargo",
-			"command": "run",
-			"args": [
-				"--example",
-				"vm",
-				"--features=ui,vm"
-			],
-			"env": {
-				"RUST_BACKTRACE": "1"
-			},
-			"problemMatcher": [
-				"$rustc"
-			]
-		}
+		}		
 	]
 }

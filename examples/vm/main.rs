@@ -1,36 +1,53 @@
 use bytes::BytesMut;
-use cfg_block::cfg_block;
 use nodem_rs::int_surface::{ IntSurface };
 use nodem_rs::media::{ font::Alignment, Identifier };
 use virtmach::{self, VirtMach, Program, interrupts::{ self, SoftInterrupt }};
 
-cfg_block! {
-    if #[cfg(feature = "ui")] {
-        #[path = "../../impl/sdl2.rs"]
-        mod sdl2;
-        use sdl2::Example;
-    } else {
-        #[path = "../../impl/term.rs"]        
-        mod term;
-        use term::Example;
-    }
-}
+
+#[cfg(feature = "ui")]
+#[path = "../../impl/sdl2.rs"]
+#[cfg(feature = "ui")]
+mod sdl2;
+#[cfg(feature = "ui")]
+use sdl2::Example;
+
+#[cfg(feature = "term")]
+#[path = "../../impl/term.rs"]        
+#[cfg(feature = "term")]
+mod term; 
+#[cfg(feature = "term")]
+use term::Example;
+
 
 use nodem_rs::*;
 use nodem_rs::surface::*;
     
 pub static PKG_SYS: &'static [u8] = include_bytes!("../../../nodem-pkg/pkg/sys.pkg");
 
-static PROGRAM: &str = "     
-    ; Count up register 0 and memory address 0
-    start:
-        reg r0
-        add #1
-        sto #0
-        hlt
-        jmp start
+static PROGRAM: &str = "
+    REM basic test    
+    FONT = 0
+    FULLTEXT$ = \"{inv}{img:Pointer}{prop}Hello, world!{img:Pointer}\"                
+    S_W, S_H = surface.get_size()    
+    D_X = 1
+    D_Y = 1
+    X = 0
+    Y = 0
+    WHILE 1        
+        TEXT$ = MID$(FULLTEXT$, 19, 19) + \"{br}   (\" + STR$(X) + \"/\" + STR$(Y) +  \")\"
+        T_W, T_H = surface.get_text_size(FONT, TEXT$)
+        surface.clear(1)       
+        surface.fill_rect(X - 1, Y - 1, T_W + 2, T_H + 2, 0)                
+        surface.draw_text(X, Y, FONT, TEXT$)
+        IF X >= S_W - (T_W + 2) THEN D_X = -1
+        IF X <= 0 THEN D_X = 1
+        IF Y >= S_H - (T_H + 2) THEN D_Y = -1
+        IF Y <= 0 THEN D_Y = 1
+        X = X + D_X        
+        Y = Y + D_Y       
+        HALT
+    WEND
 ";
-
 
 static EMPTY: [u8;0] = [];
 static mut VM: Option<VirtMach> = None;
@@ -48,6 +65,7 @@ impl Example {
         let res = VirtMach::compile("PROGRAM", PROGRAM, vec![
             (interrupts::proc::NAME, interrupts::proc::FUNCTIONS.as_slice()),
             (interrupts::math::NAME, interrupts::math::FUNCTIONS.as_slice()),
+            (interrupts::string::NAME, interrupts::string::FUNCTIONS.as_slice()),
             (interrupts::random::NAME, interrupts::random::FUNCTIONS.as_slice()),
             (interrupts::surface::NAME, interrupts::surface::FUNCTIONS.as_slice())
         ]);
@@ -62,7 +80,7 @@ impl Example {
                     log::info!("| {:04x} | {}", addr, str::from_utf8(&buf).unwrap());
                     buf.clear();
 
-                    if pos >= res.0.data.len() { break }
+                    if pos >= res.0.get_instructions().len() { break }
                 }
                 
                 vm.load_program(res.0);                                    
@@ -73,7 +91,7 @@ impl Example {
             }
         }
 
-        vm.load_program(surface.media.get_program(3));                    
+        //vm.load_program(surface.media.get_program(3));                    
 
         unsafe { VM = Some(vm); }        
     }
@@ -90,9 +108,10 @@ impl Example {
 
         let int0: &mut dyn SoftInterrupt = &mut interrupts::proc::Interrupt {};
         let int1: &mut dyn SoftInterrupt = &mut interrupts::math::Interrupt {};
-        let int2: &mut dyn SoftInterrupt = &mut interrupts::random::Interrupt {};
-        let int3: &mut dyn SoftInterrupt = &mut IntSurface { surface: surface };
-        let mut interrupts = [int0, int1, int2, int3];
+        let int2: &mut dyn SoftInterrupt = &mut interrupts::string::Interrupt {};
+        let int3: &mut dyn SoftInterrupt = &mut interrupts::random::Interrupt {};        
+        let int4: &mut dyn SoftInterrupt = &mut IntSurface { surface: surface };
+        let mut interrupts = [int0, int1, int2, int3, int4];
 
         if !unsafe { PAUSED } || unsafe { RUN_TO_HLT } {
             vm.run(1024, &mut interrupts);                    
