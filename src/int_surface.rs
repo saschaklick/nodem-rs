@@ -43,18 +43,11 @@ impl SoftInterrupt for IntSurface <'_> {
                     _ => self.surface.draw_border(value as BorderIdx, area)
                 }
             }
-            4 | 18 => {
+            4 => {
                 let p_0 = Point { x: vm.stack_pop() as PosX, y: vm.stack_pop() as PosY };                
                 let p_1 = Point { x: vm.stack_pop() as PosX, y: vm.stack_pop() as PosY };                
-                match op {
-                    4 => {
-                        let color = vm.stack_pop() as u8;                
-                        self.surface.draw_line(p_0, p_1, color);
-                    },
-                    _ => self.surface.set_clip(p_0, p_1)
-                    
-                }
-                
+                let color = vm.stack_pop() as u8;                
+                self.surface.draw_line(p_0, p_1, color);
             }    
             10 => {
                 let p = Point { x: vm.stack_pop() as PosX, y: vm.stack_pop() as PosY };                
@@ -74,15 +67,24 @@ impl SoftInterrupt for IntSurface <'_> {
                 vm.stack_push(self.surface.height as VMAtom);
             } 
             17 => {
-                // vm.stack_pop();
-                // vm.stack_push(0);
-                // vm.stack_push(0);
-            }                       
+                let image_idx = vm.stack_pop();
+                let size = self.surface.get_image_size(Identifier::Index(image_idx as u8));
+                vm.stack_push(size.width as VMAtom);
+                vm.stack_push(size.height as VMAtom);
+            }
+            // The VM side speaks (x,y,w,h), `Surface::clip` is two corners.
+            18 => {
+                let clip = self.surface.clip;
+                vm.stack_push(clip.p0.x as VMAtom);
+                vm.stack_push(clip.p0.y as VMAtom);
+                vm.stack_push(clip.p1.x.saturating_sub(clip.p0.x) as VMAtom);
+                vm.stack_push(clip.p1.y.saturating_sub(clip.p0.y) as VMAtom);
+            }
             19 => {
-                self.surface.clip.p0.x = vm.stack_pop() as PosX;
-                self.surface.clip.p0.y = vm.stack_pop() as PosY;
-                self.surface.clip.p1.x = vm.stack_pop() as PosX;
-                self.surface.clip.p0.y = vm.stack_pop() as PosY;
+                let p_0 = Point { x: vm.stack_pop() as PosX, y: vm.stack_pop() as PosY };
+                let size = Size { width: vm.stack_pop() as SizeW, height: vm.stack_pop() as SizeH };
+                let p_1 = Point { x: p_0.x.saturating_add_unsigned(size.width), y: p_0.y.saturating_add_unsigned(size.height) };
+                self.surface.set_clip(p_0, p_1);
             }                               
             _ => { vm.error = RuntimeError::UnimplementedInterruptFunc; }
         }        
