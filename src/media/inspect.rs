@@ -47,15 +47,18 @@ impl Media {
             )).expect("");
         }        
 
-        csv.write_str("page_idx,id,source,size\r\n").expect("");
-        for page_idx in 0..255 {
-            let page = self.get_page(page_idx);
-            if filter_source(page.source) || page.content.len() == 0 { continue; }
-            csv.write_fmt(format_args!(
-                "{},\"{}\",{},{}\r\n",
-                page_idx, page.id, page.source, page.content.len()
-            )).expect("");
-        }     
+        #[cfg(feature = "dom")]
+        {
+            csv.write_str("page_idx,id,source,size\r\n").expect("");
+            for page_idx in 0..255 {
+                let page = self.get_page(page_idx);
+                if filter_source(page.source) || page.content.len() == 0 { continue; }
+                csv.write_fmt(format_args!(
+                    "{},\"{}\",{},{}\r\n",
+                    page_idx, page.id, page.source, page.content.len()
+                )).expect("");
+            }     
+        }
 
         #[cfg(feature = "vm")]
         {
