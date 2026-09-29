@@ -84,6 +84,8 @@ pub struct DOM <'a>{
 
     #[cfg(feature = "vm")]
     pub vm: VirtMach<'a>,    
+    #[cfg(feature = "vm")]
+    vm_clip: Clip,
 }
 
 impl DOM<'_> {
@@ -96,7 +98,9 @@ impl DOM<'_> {
             dom: dom::DOM::default(),
             control: Some(Control::default()),
             #[cfg(feature = "vm")]
-            vm: VirtMach::new(),                        
+            vm: VirtMach::new(),
+            #[cfg(feature = "vm")]
+            vm_clip: Clip { p0: Point { x: 0, y: 0 }, p1: Point { x: width as PosX, y: height as PosY } },
         }
     }    
 }
@@ -115,8 +119,11 @@ impl Runtime for DOM<'_> {
             }else{
                 let clip = self.surface.clip;
                 #[cfg(feature = "vm")]
-                {                                                            
-                    self.surface.clip.reset(self.surface.width, self.surface.height);                                        
+                {                    
+                    if self.vm.cycle_cnt == 0 {
+                        self.vm_clip.reset(self.surface.width, self.surface.height);
+                    }
+                    self.surface.clip = self.vm_clip;
 
                     let int0: &mut dyn SoftInterrupt = &mut interrupts::proc::Interrupt {};
                     let int1: &mut dyn SoftInterrupt = &mut interrupts::math::Interrupt {};
@@ -125,7 +132,9 @@ impl Runtime for DOM<'_> {
                     let int4: &mut dyn SoftInterrupt = &mut IntSurface { surface: &mut self.surface };
                     let mut interrupts = [int0, int1, int2, int3, int4];                    
                                         
-                    self.vm.run(1024, &mut interrupts);                                                   
+                    self.vm.run(1024, &mut interrupts);
+                    self.vm_clip = self.surface.clip;
+                    self.surface.clip.reset(self.surface.width, self.surface.height);
                 }
                 #[cfg(feature = "dom")]
                 {
