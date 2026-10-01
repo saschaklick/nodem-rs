@@ -124,15 +124,21 @@ impl Runtime for DOM<'_> {
                         self.vm_clip.reset(self.surface.width, self.surface.height);
                     }
                     self.surface.clip = self.vm_clip;
-
-                    let int0: &mut dyn SoftInterrupt = &mut interrupts::proc::Interrupt {};
-                    let int1: &mut dyn SoftInterrupt = &mut interrupts::math::Interrupt {};
-                    let int2: &mut dyn SoftInterrupt = &mut interrupts::string::Interrupt {};
-                    let int3: &mut dyn SoftInterrupt = &mut interrupts::random::Interrupt {};        
-                    let int4: &mut dyn SoftInterrupt = &mut IntSurface { surface: &mut self.surface };
-                    let mut interrupts = [int0, int1, int2, int3, int4];                    
+                    
+                    let mut interrupts: &mut [&mut dyn SoftInterrupt] = &mut [
+                        &mut interrupts::math::Interrupt {},
+                        &mut interrupts::proc::Interrupt {},
+                        &mut interrupts::string::Interrupt {},
+                        &mut interrupts::random::Interrupt {},
+                        &mut interrupts::dummy::Interrupt {},
+                        &mut interrupts::trig::Interrupt {},
+                        &mut IntSurface { surface: &mut self.surface },
+                        &mut interrupts::gpio::Interrupt {},
+                        &mut interrupts::uart::Interrupt {},
+                        &mut interrupts::i2c::Interrupt {},
+                    ];                   
                                         
-                    self.vm.run(1024, &mut interrupts);
+                    self.vm.run(1024, interrupts);
                     self.vm_clip = self.surface.clip;
                     self.surface.clip.reset(self.surface.width, self.surface.height);
                 }

@@ -63,10 +63,12 @@ impl Example {
         let mut vm = VirtMach::new();          
                                 
         let res = VirtMach::compile("PROGRAM", PROGRAM, vec![
-            (interrupts::proc::NAME, interrupts::proc::FUNCTIONS.as_slice()),
             (interrupts::math::NAME, interrupts::math::FUNCTIONS.as_slice()),
+            (interrupts::proc::NAME, interrupts::proc::FUNCTIONS.as_slice()),
             (interrupts::string::NAME, interrupts::string::FUNCTIONS.as_slice()),
             (interrupts::random::NAME, interrupts::random::FUNCTIONS.as_slice()),
+            (interrupts::time::NAME, interrupts::random::FUNCTIONS.as_slice()),
+            (interrupts::trig::NAME, interrupts::random::FUNCTIONS.as_slice()),
             (interrupts::surface::NAME, interrupts::surface::FUNCTIONS.as_slice())
         ]);
 
@@ -105,16 +107,22 @@ impl Example {
             print!("\x1b[H\x1b[J");          
             println!("{}", str::from_utf8(&buf).unwrap());
         }
-
-        let int0: &mut dyn SoftInterrupt = &mut interrupts::proc::Interrupt {};
-        let int1: &mut dyn SoftInterrupt = &mut interrupts::math::Interrupt {};
-        let int2: &mut dyn SoftInterrupt = &mut interrupts::string::Interrupt {};
-        let int3: &mut dyn SoftInterrupt = &mut interrupts::random::Interrupt {};        
-        let int4: &mut dyn SoftInterrupt = &mut IntSurface { surface: surface };
-        let mut interrupts = [int0, int1, int2, int3, int4];
+        
+        let mut interrupts: &mut [&mut dyn SoftInterrupt] = &mut [
+            &mut interrupts::math::Interrupt {},
+            &mut interrupts::proc::Interrupt {},
+            &mut interrupts::string::Interrupt {},
+            &mut interrupts::random::Interrupt {},
+            &mut interrupts::dummy::Interrupt {},
+            &mut interrupts::trig::Interrupt {},
+            &mut IntSurface { surface: surface },
+            &mut interrupts::gpio::Interrupt {},
+            &mut interrupts::uart::Interrupt {},
+            &mut interrupts::i2c::Interrupt {},
+        ];                   
 
         if !unsafe { PAUSED } || unsafe { RUN_TO_HLT } {
-            vm.run(1024, &mut interrupts);                    
+            vm.run(1024, interrupts);                    
             //vm.log();        
 
             if (unsafe { RUN_TO_HLT } == true) && !vm.running() {                
