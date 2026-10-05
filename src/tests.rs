@@ -1,6 +1,8 @@
 mod helpers;
 mod surface;
 mod dom;
+#[cfg(all(feature = "xml", feature = "std", feature = "alloc"))]
+mod dom_limits;
 
 // #[test]
 // fn dom_basic() {    

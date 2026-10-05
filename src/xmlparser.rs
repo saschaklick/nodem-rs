@@ -38,7 +38,9 @@ impl XmlParser {
                     if xml.len() <= self.position {
                         return Ok(XmlEvent::EndDocument {});   
                     }
-                    let character: char = xml.chars().nth(self.position).unwrap();
+                    // `position` is a byte offset (used for slicing), so read the character at that
+                    // byte offset; a char index desyncs on multi-byte UTF-8 (umlauts, ß) and panics.
+                    let character: char = xml[self.position..].chars().next().unwrap();
                     //log::info!("{} at {} [s: {}]", character, self.position, self.state);
                     match self.state {
                         1 => {
@@ -234,10 +236,12 @@ impl XmlParser {
                             return Err("invalid state");
                         }
                     }
-                    self.position += 1;
+                    // The in-state increments above are all on ASCII delimiters; only this one can
+                    // sit on a multi-byte content character.
+                    self.position += character.len_utf8();
                 }
-            }            
-        }        
+            }
+        }
     }
 
     pub fn position(&self) -> usize {

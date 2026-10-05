@@ -243,8 +243,11 @@ impl Surface {
                     instruction[0] = 0;
                 }                
                 size.width = cmp::max(size.width as PosX, cursor.x.saturating_sub(typesetting.glyph_spacing as PosX)) as SizeW;            
-            }  
-            rem_text = &rem_text[1..];
+            }
+            // Advance by the consumed character's byte length; a fixed 1 lands mid-character on
+            // multi-byte UTF-8 and panics.
+            let adv = rem_text.chars().next().map_or(1, |c| c.len_utf8());
+            rem_text = &rem_text[adv..];
         }
         size.height = cursor.y.saturating_add(line_height as PosY) as SizeW;        
         return size;

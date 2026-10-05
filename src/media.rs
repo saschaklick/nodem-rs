@@ -288,7 +288,7 @@ pub mod image_gen;
 pub mod font_gen;
 #[cfg(all(feature= "std", feature = "ninepatch"))]
 pub mod border_gen;
-#[cfg(all(feature= "std", feature = "ninepatch"))]
+#[cfg(all(feature= "std", feature = "dom"))]
 pub mod page_gen;        
 #[cfg(all(feature= "std", feature = "vm"))]
 pub mod program_gen;        

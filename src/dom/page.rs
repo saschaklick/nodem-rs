@@ -19,6 +19,9 @@ impl DOM {
         let mut depth = 0;
         let mut p_stack = [NODE_MAX as u8; DOM_DEPTH_MAX];
         let mut n_i = 0;
+        // Depth of an element dropped for exceeding NODE_MAX or DOM_DEPTH_MAX (0: none). Everything
+        // up to its closing tag (attributes, content, children) is consumed but not applied.
+        let mut skip = 0;
 
         dom.reset();
         
@@ -52,6 +55,22 @@ impl DOM {
                 13 => PageInstruction::NodeFrame,
                 _ => { err = Ret::InvalidDOMInstruction; log::error!("invalid dom instruction {}:{:02x}", position, bin[position]); continue; }
             });
+            if skip > 0 && !matches!(instruction, PageInstruction::DOM) {
+                // Consume the operands of a dropped element's instruction without applying it.
+                match instruction {
+                    PageInstruction::NodeContent => {
+                        let mut data_end = position;
+                        while data_end < bin.len() && bin[data_end] != 0 {
+                            data_end += 1;
+                        }
+                        reader.set_pos(data_end);
+                    },
+                    PageInstruction::NodeWidth | PageInstruction::NodeHeight => { reader.read_u16(); },
+                    PageInstruction::NodeMargin | PageInstruction::NodePadding => { values(&mut reader); },
+                    _ => {}
+                }
+                continue;
+            }
             match instruction {
                 PageInstruction::DOM => match PageDOMInstruction::from( match value {
                     0 => PageDOMInstruction::DocumentStart,
@@ -61,6 +80,17 @@ impl DOM {
                     _ => { err = Ret::InvalidDOMInstruction; log::error!("invalid dom instruction {}:{:02x}", position, bin[position]); continue; }
                 }) {
                     PageDOMInstruction::NodeStart => {                             
+                        if skip == 0 && depth >= DOM_DEPTH_MAX {
+                            log::error!("dom nesting too deep (>{}), element dropped", DOM_DEPTH_MAX);
+                            skip = depth + 1;
+                        } else if skip == 0 && depth > 0 && (n_i as usize) + 1 >= NODE_MAX as usize {
+                            log::error!("too many nodes (>{}), element dropped", NODE_MAX);
+                            skip = depth + 1;
+                        }
+                        if skip > 0 {
+                            depth += 1;
+                            continue;
+                        }
                         if depth > 0 {
                             n_i += 1;                    
                             let c_i = dom.nodes[p_stack[depth - 1] as usize].first_child;
@@ -84,7 +114,8 @@ impl DOM {
                         depth += 1;     
                     },
                     PageDOMInstruction::NodeEnd => {                    
-                        depth -= 1;
+                        if depth > 0 { depth -= 1; } // never underflow on extra close tags
+                        if depth < skip { skip = 0; }
                         log::trace!("{position:4}| ({depth}:{n_i}) </N>");
                     },
                     PageDOMInstruction::DocumentStart => {
@@ -165,14 +196,14 @@ impl DOM {
         return err;            
     }
 
-    #[cfg(all(not(feature = "xml"), not(feature = "dom")))]
+    #[cfg(not(all(feature = "xml", feature = "alloc")))]
     pub fn from_xml (&mut self, _xml: &str) -> Ret {       
         self.clear();
-        log::error!("xml feature disabled");
+        log::error!("xml or alloc feature disabled");
         return Ret::NoAllocFeature;
     }
 
-    #[cfg(all(feature = "dom", feature = "xml"))]
+    #[cfg(all(feature = "dom", feature = "xml", feature = "alloc"))]
     pub fn from_xml(&mut self, xml: &str) -> Ret {        
         self.alloc_buf.raw = unsafe{ if self.alloc_buf.raw.is_null() {
                 alloc(Layout::from_size_align(xml.len(), 4).unwrap())
@@ -199,6 +230,9 @@ impl DOM {
         let mut depth = 0;
         let mut p_stack = [NODE_MAX as u8; DOM_DEPTH_MAX];
         let mut n_i = 0;
+        // Depth of an element dropped for exceeding NODE_MAX or DOM_DEPTH_MAX (0: none). Everything
+        // up to its closing tag (attributes, content, children) is consumed but not applied.
+        let mut skip = 0;
 
         dom.clear();
 
@@ -216,6 +250,17 @@ impl DOM {
             let position = reader.position();
             match event.unwrap() {
                 XmlEvent::StartElement { name } => {         
+                    if skip == 0 && depth >= DOM_DEPTH_MAX {
+                        log::error!("dom nesting too deep (>{}), <{}> dropped", DOM_DEPTH_MAX, name);
+                        skip = depth + 1;
+                    } else if skip == 0 && depth > 0 && (n_i as usize) + 1 >= NODE_MAX as usize {
+                        log::error!("too many nodes (>{}), <{}> dropped", NODE_MAX, name);
+                        skip = depth + 1;
+                    }
+                    if skip > 0 {
+                        depth += 1;
+                        continue;
+                    }
                     if depth > 0 {
                         n_i += 1;                    
                         let c_i = dom.nodes[p_stack[depth - 1] as usize].first_child;
@@ -239,6 +284,7 @@ impl DOM {
                     p_stack[depth] = n_i;
                     depth += 1;          
                 }
+                XmlEvent::Attribute { .. } if skip > 0 => {},
                 XmlEvent::Attribute { key, value} => {         
                     let n_i = if depth > 0 { p_stack[depth - 1] } else { 0 };                    
                     
@@ -335,9 +381,11 @@ impl DOM {
                     }                     
                 },               
                 XmlEvent::EndElement { name } => {                         
-                    depth -= 1;
+                    if depth > 0 { depth -= 1; } // never underflow on extra close tags
+                    if depth < skip { skip = 0; }
                     log::trace!("{position:4}| ({depth}:{n_i}) </{name}>");
                 },
+                XmlEvent::CData { .. } if skip > 0 => {},
                 XmlEvent::CData { data } => {                        
                     let str = data;
                     if str.len() > 0 {

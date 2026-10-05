@@ -278,6 +278,10 @@ impl DOM {
             let node = &mut self.nodes[node_idx as usize];
             let mut c_i = node.plot.content_idx;
             if c_i == CONTENT_MAX {
+                if self.content_idx >= CONTENT_MAX {
+                    log::error!("too many contents (>{}), text dropped", CONTENT_MAX);
+                    return;
+                }
                 c_i = self.content_idx;
                 self.content_idx += 1;
                 node.plot.content_idx = c_i;

@@ -274,3 +274,10 @@ fn dom_usecases() {
         "############            ########################"
     )));        
 }
+#[test]
+fn dom_umlaut_no_trap() {
+    // A multi-byte UTF-8 char in text must not panic the parser or the renderer.
+    let _ = DOMTest::run(Size {width: 64, height: 10}, |dom| {
+        dom.from_xml("<N>\u{00fc}\u{00f6}\u{00e4}\u{00df}</N>");
+    }, "");
+}
