@@ -6,6 +6,13 @@ use crate::control::*;
 use virtmach::{self, VirtMach, interrupts::{ self, SoftInterrupt }};
 #[cfg(feature = "vm")]
 use crate::int_surface::IntSurface;
+#[cfg(feature = "vm")]
+extern crate alloc;
+#[cfg(feature = "vm")]
+use alloc::boxed::Box;
+
+#[cfg(feature = "vm")]
+pub const VM_INTERRUPT_CNT: usize = 10;
 
 struct RuntimePrivate {    
 }
@@ -14,9 +21,10 @@ impl RuntimePrivate {
     const INTRO_WAIT: usize = 16;    
 
     fn intro (surface: &mut Surface, loop_cnt: usize) -> bool {                
-        if loop_cnt < surface.height as usize + RuntimePrivate::INTRO_WAIT {
-            if loop_cnt == 0 || (loop_cnt > RuntimePrivate::INTRO_WAIT && loop_cnt < surface.height as usize + RuntimePrivate::INTRO_WAIT) {
-                let size = surface.get_image_size(Identifier::Index(SYS_LOGO));
+        let size = surface.get_image_size(Identifier::Index(SYS_LOGO));
+        let dist = core::cmp::max(surface.height as usize, size.height as usize);
+        if loop_cnt < dist + RuntimePrivate::INTRO_WAIT {
+            if loop_cnt == 0 || (loop_cnt > RuntimePrivate::INTRO_WAIT && loop_cnt < dist + RuntimePrivate::INTRO_WAIT) {                
                 let y = if loop_cnt == 0 { 0 } else { (loop_cnt - RuntimePrivate::INTRO_WAIT) as PosY };
                 surface.clear(0);
                 surface.draw_image(Identifier::Index(SYS_LOGO), Point { x: (surface.width as PosX - size.width as PosX) / 2, y: (surface.height as PosY - size.height as PosY) / 2 + y }, None);     
@@ -73,7 +81,7 @@ pub trait Runtime {
     fn process_command(&mut self, input: &[u8], res: &mut dyn core::fmt::Write, external_listener: &mut dyn IControl) -> (usize, core::fmt::Result);
 }
 
-pub struct DOM <'a>{
+pub struct Env <'a>{
     loop_cnt: usize,
     pub status_message: Option<&'a str>,
     
@@ -86,9 +94,11 @@ pub struct DOM <'a>{
     pub vm: VirtMach<'a>,    
     #[cfg(feature = "vm")]
     vm_clip: Clip,
+    #[cfg(feature = "vm")]
+    vm_interrupts: [Option<Box<dyn SoftInterrupt>>; VM_INTERRUPT_CNT]
 }
 
-impl DOM<'_> {
+impl Env<'_> {
     pub fn new(buf: & mut [u8], width: SizeW, height: SizeH) -> Self {
         Self {
             loop_cnt: 0,
@@ -101,11 +111,19 @@ impl DOM<'_> {
             vm: VirtMach::new(),
             #[cfg(feature = "vm")]
             vm_clip: Clip { p0: Point { x: 0, y: 0 }, p1: Point { x: width as PosX, y: height as PosY } },
+            #[cfg(feature = "vm")]
+            vm_interrupts: Default::default(),
         }
-    }    
+    }
+
+    /// Replaces the built-in VM interrupt at `index` (e.g. with a platform-specific gpio/uart/i2c implementation).
+    #[cfg(feature = "vm")]
+    pub fn set_vm_interrupt(&mut self, index: usize, interrupt: Box<dyn SoftInterrupt>) {
+        self.vm_interrupts[index] = Some(interrupt);
+    }
 }
 
-impl Runtime for DOM<'_> {
+impl Runtime for Env<'_> {
     fn run(&mut self) -> bool {
         if self.loop_cnt == 0 {
             self.surface.media.load_pkg(PKG_SYS.as_ptr(), PKG_SYS.len(), 0);
@@ -124,21 +142,26 @@ impl Runtime for DOM<'_> {
                         self.vm_clip.reset(self.surface.width, self.surface.height);
                     }
                     self.surface.clip = self.vm_clip;
-                    
-                    let mut interrupts: &mut [&mut dyn SoftInterrupt] = &mut [
+
+                    let mut interrupts: [&mut dyn SoftInterrupt; VM_INTERRUPT_CNT] = [
                         &mut interrupts::math::Interrupt {},
                         &mut interrupts::proc::Interrupt {},
                         &mut interrupts::string::Interrupt {},
                         &mut interrupts::random::Interrupt {},
                         &mut interrupts::dummy::Interrupt {},
-                        &mut interrupts::trig::Interrupt {},
+                        &mut interrupts::dummy::Interrupt {},
                         &mut IntSurface { surface: &mut self.surface },
-                        &mut interrupts::gpio::Interrupt {},
-                        &mut interrupts::uart::Interrupt {},
-                        &mut interrupts::i2c::Interrupt {},
-                    ];                   
-                                        
-                    self.vm.run(1024, interrupts);
+                        &mut interrupts::dummy::Interrupt {},
+                        &mut interrupts::dummy::Interrupt {},
+                        &mut interrupts::dummy::Interrupt {},
+                    ];
+                    for (index, interrupt) in self.vm_interrupts.iter_mut().enumerate() {
+                        if let Some(interrupt) = interrupt {
+                            interrupts[index] = interrupt.as_mut();
+                        }
+                    }
+
+                    self.vm.run(1024, &mut interrupts);
                     self.vm_clip = self.surface.clip;
                     self.surface.clip.reset(self.surface.width, self.surface.height);
                 }
