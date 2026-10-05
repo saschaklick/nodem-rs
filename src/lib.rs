@@ -33,21 +33,49 @@ pub const SURFACE_BUFFER_SIZE:usize  = (SURFACE_WIDTH as usize * SURFACE_HEIGHT 
 
 pub const LIBRARY_MAX:   LibraryIdx  = 4;
 
-pub const NODE_MAX:      NodeIdx     = 24;
-pub const CONTENT_MAX:   ContentIdx  = 16;
+/// Reads a build-time limit from the environment variable `value` came from, else `default`.
+/// Set it in the building project's `.cargo/config.toml`, e.g. `[env] NODEM_NODE_MAX = "24"`;
+/// changing it rebuilds nodem-rs. A value that is not a number in `min..=max` fails the build.
+const fn limit(value: Option<&str>, default: usize, min: usize, max: usize) -> usize {
+    let n = match value {
+        None => default,
+        Some(s) => {
+            let bytes = s.as_bytes();
+            if bytes.is_empty() { panic!("nodem limit: empty value"); }
+            let mut n = 0usize;
+            let mut i = 0;
+            while i < bytes.len() {
+                let b = bytes[i];
+                if b < b'0' || b > b'9' { panic!("nodem limit: not a number"); }
+                n = n * 10 + (b - b'0') as usize;
+                i += 1;
+            }
+            n
+        }
+    };
+    if n < min || n > max { panic!("nodem limit: out of range"); }
+    n
+}
+
+// Node and content indices are u8 and their *_MAX value means "none", so at most 255.
+pub const NODE_MAX:      NodeIdx     = limit(option_env!("NODEM_NODE_MAX"), 64, 1, 255) as NodeIdx;
+pub const CONTENT_MAX:   ContentIdx  = limit(option_env!("NODEM_CONTENT_MAX"), 64, 1, 255) as ContentIdx;
 pub const AREA_MAX:      NodeIdx     = NODE_MAX;
 pub const MARGIN_INIT:   MarginIdx   = 0;
 pub const MARGIN_MAX:    MarginIdx   = 12;
 pub const PADDING_INIT:  PaddingIdx  = 0;
 pub const PADDING_MAX:   PaddingIdx  = 12;
 pub const STYLE_INIT:    StyleIdx    = 0;
-pub const STYLE_MAX:     StyleIdx    = 12;
-pub const BORDER_RECT:   BorderIdx   = 10;
-pub const BORDER_MAX:    BorderIdx   = BORDER_RECT + 1;
+pub const STYLE_MAX:     StyleIdx    = limit(option_env!("NODEM_STYLE_MAX"), 32, 1, 254) as StyleIdx;
+pub const BORDER_MAX:    BorderIdx   = limit(option_env!("NODEM_BORDER_MAX"), 10, 2, 16) as BorderIdx;
+pub const BORDER_RECT:   BorderIdx   = BORDER_MAX - 1;
 pub const FONT_MAX:      FontIdx     = FontIdx::MAX;
 pub const ID_MAX:        IdIdx       = 10;
 
-pub const DOM_DEPTH_MAX: usize       = 8;
+pub const DOM_DEPTH_MAX: usize       = limit(option_env!("NODEM_DOM_DEPTH_MAX"), 8, 1, 255);
+
+/// Receive buffer for packages in builds without `alloc` (with `alloc` it is sized per package).
+pub const MEDIA_SIZE:    usize       = limit(option_env!("NODEM_MEDIA_SIZE"), 1024 * 8, 16, usize::MAX);
 
 pub mod surface;
 #[cfg(feature = "dom")]

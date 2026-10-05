@@ -9,7 +9,7 @@ use crate::tests::pkg_load::package;
 fn send(control: &mut Control, surface: &mut Surface, buf: &[u8]) -> String {
     let mut listeners: [Option<&mut dyn IControl>; 4] = [None, None, None, None];
     let mut res = String::new();
-    control.process(buf, surface, &mut listeners, &mut res);
+    let _ = control.process(buf, surface, &mut listeners, &mut res);
     res
 }
 

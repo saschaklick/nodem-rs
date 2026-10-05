@@ -6,7 +6,7 @@ extern crate alloc;
 use alloc::{boxed::Box, vec};
 
 #[cfg(not(feature = "alloc"))]
-const MEDIA_SIZE: usize = 1024 * 8;
+use crate::MEDIA_SIZE;
 
 #[cfg(feature = "alloc")]
 static mut MEDIA_PKG: Option<Box<[u8]>> = None;

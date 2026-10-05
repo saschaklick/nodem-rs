@@ -168,6 +168,10 @@ impl Surface {
                                         self.draw_rect(Area { point: cursor, size: Size { width: font.mono_width as SizeW, height: font.base_height as SizeH } }, color);                                        
                                     }
                                     cursor.x += (font.mono_width as PosX).checked_add(typesetting.glyph_spacing as PosX).unwrap_or(PosX::MAX);
+                                    // Count the placeholder towards the line, else a text of only unknown chars has height 0.
+                                    if line_height < font.base_height as PosY {
+                                        line_height = font.base_height as PosY;
+                                    }
                                 }else{
                                     if reader.available() >= GLYPH_HEADER_SIZE - 1 {
                                         let height = reader.read_u8();

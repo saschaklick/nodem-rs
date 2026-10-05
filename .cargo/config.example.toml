@@ -1,0 +1,55 @@
+# nodem-rs build configuration (example)
+#
+# Copy this file to `.cargo/config.toml` in the project that BUILDS nodem-rs (your firmware, the wasm
+# wrapper, or this repository) and edit the values. Cargo passes `[env]` to every crate it compiles,
+# so this also works when nodem-rs is a dependency. Changing a value rebuilds nodem-rs.
+#
+# All values are strings. Commented-out entries use the built-in default shown.
+# A value that is not a number or out of range stops the build with an error naming the constant.
+#
+# A value set in the shell (e.g. `NODEM_NODE_MAX=24 cargo build`) takes precedence over this file.
+# To make this file win, write the entry as `NODEM_NODE_MAX = { value = "24", force = true }`.
+
+[env]
+
+# Target name reported by the `info` command. Required: the build fails if it is not set.
+NODEM_ARCH = "YOUR-ARCH"
+
+# --- DOM limits -------------------------------------------------------------------------------------
+# These size the DOM's static arrays, so they cost RAM on every target. Approximate DOM size on a
+# 32-bit MCU without `inspect`: defaults (64/64/32) ~1.4 KB, small (24/16/12) ~470 B.
+# Pages that exceed a limit are not rejected: the surplus elements/texts are dropped with an error log.
+
+# Maximum number of nodes (elements) in a page. 1-255.
+# NODEM_NODE_MAX = "64"
+
+# Maximum number of text contents in a page. 1-255.
+# NODEM_CONTENT_MAX = "64"
+
+# Maximum number of distinct styles (background/color/border/font combinations) in a page. 1-254.
+# NODEM_STYLE_MAX = "32"
+
+# Maximum nesting depth of a page (root = level 1). 1-255. Costs a few bytes of stack per level
+# while parsing and laying out. Deeper elements are dropped with their whole subtree.
+# NODEM_DOM_DEPTH_MAX = "8"
+
+# --- Borders ----------------------------------------------------------------------------------------
+# Border indices: 0 .. BORDER_MAX-2 are the package's nine-patch borders, BORDER_MAX-1 is the built-in
+# solid border (`border=solid`), BORDER_MAX means "no border". No RAM cost. 2-16 (binary pages store
+# the index in 4 bits).
+# CAUTION: this is part of the page/package format. Binary pages and packages must be built with the
+# same value as the device that shows them, otherwise `solid` and numbered borders come out wrong.
+# NODEM_BORDER_MAX = "11"
+
+# --- Loader -----------------------------------------------------------------------------------------
+
+# Receive buffer for packages in builds WITHOUT the `alloc` feature, in bytes. A package larger than
+# this is rejected with NotEnoughSpace. With `alloc` the buffer is allocated per package and this is
+# not used. At least 16.
+# NODEM_MEDIA_SIZE = "8192"
+
+# --- Example: small MCU (e.g. 8/16-bit, few KB RAM) ---------------------------------------------------
+# NODEM_NODE_MAX = "24"
+# NODEM_CONTENT_MAX = "16"
+# NODEM_STYLE_MAX = "12"
+# NODEM_MEDIA_SIZE = "2048"

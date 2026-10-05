@@ -5,6 +5,8 @@ mod control;
 mod pkg_load;
 #[cfg(all(feature = "xml", feature = "std"))]
 mod dom_limits;
+#[cfg(all(feature = "xml", feature = "std"))]
+mod umlaut_render;
 
 // #[test]
 // fn dom_basic() {    

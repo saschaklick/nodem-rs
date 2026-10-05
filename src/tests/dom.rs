@@ -281,3 +281,18 @@ fn dom_umlaut_no_trap() {
         load_xml(dom, "<N>\u{00fc}\u{00f6}\u{00e4}\u{00df}</N>");
     }, "");
 }
+
+#[test]
+fn dom_placeholder_only_text_visible() {
+    // A text made only of chars the font lacks still shows their placeholder boxes.
+    assert_eq!(true, DOMTest::run(Size {width: 8, height: 6}, |dom| {
+        load_xml(dom, "<N>\u{00fc}</N>");
+    }, concat!(
+        "###     ",
+        "# #     ",
+        "# #     ",
+        "###     ",
+        "        ",
+        "        ",
+    )));
+}
