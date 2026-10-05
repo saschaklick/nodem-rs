@@ -191,8 +191,18 @@ impl Runtime for Env<'_> {
                 {
                     // let x = (self.surface.width as f32 / 2.0) + (((self.loop_cnt as f32) / 10.0).cos() * self.surface.width as f32 / 2.5);
                     // let y = (self.surface.height as f32 / 2.0) + (((self.loop_cnt as f32) / 10.0).sin() * self.surface.height as f32 / 2.5);
-                    let x = 16.0 + (libm::cosf((self.loop_cnt as f32) / 10.0) * 16.0);
-                    let y = 0.0 + (libm::sinf((self.loop_cnt as f32) / 17.0) * 8.0);
+                    // Integer motion, no trig: x slides 0..32 and back (a triangle wave, 64
+                    // frames a round); y swings +-4 around the middle every 60 frames as two
+                    // parabolic arcs, one up and one down - where they meet, both have the
+                    // same slope, so it moves like a sine: no corners, unlike a bounce.
+                    const HALF: i32 = 30;
+                    const SWING: i32 = 4;
+                    let t = (self.loop_cnt % (64 * 2 * HALF as usize)) as i32;
+                    let p = t % 64;
+                    let x = if p < 32 { p } else { 64 - p };
+                    let u = t % (2 * HALF);
+                    let (u, dir) = if u < HALF { (u, -1) } else { (u - HALF, 1) };
+                    let y = dir * ((4 * SWING * u * (HALF - u) + HALF * HALF / 2) / (HALF * HALF));
                     RuntimePrivate::cursor(&mut self.surface, Point { x: x as PosX, y: y as PosY });
                 }
             }
