@@ -8,7 +8,7 @@ use crate::media::*;
 use crate::tests::helpers::PKG_SYS;
 
 /// "PKG0" + u32 length + u16 CRC (seed 0x1002, sum of bytes from offset 12), then `body`.
-fn package(body: &[u8]) -> Vec<u8> {
+pub(crate) fn package(body: &[u8]) -> Vec<u8> {
     let mut pkg = b"PKG0".to_vec();
     let len = (10 + body.len()) as u32;
     pkg.extend_from_slice(&len.to_ne_bytes());

@@ -2,12 +2,14 @@
 extern crate std;
 use std::{string::String, vec, vec::Vec};
 
+use crate::tests::helpers::load_xml;
 use crate::{dom::DOM, media::Media, DOM_DEPTH_MAX, NODE_MAX, CONTENT_MAX, NodeIdx};
 
 /// Runs `check` on the DOM built from `xml` by the XML loader and by the binary loader.
-fn both<F>(xml: &str, check: F) where F: Fn(&DOM) {
+/// Markup built at runtime is passed as `String::leak()`, so it works with `from_xml_static` too.
+fn both<F>(xml: &'static str, check: F) where F: Fn(&DOM) {
     let mut dom = DOM::new();
-    dom.from_xml(xml);
+    load_xml(&mut dom, xml);
     check(&dom);
 
     let bin = Media::xml_to_bin(xml);
@@ -46,7 +48,7 @@ fn dom_too_many_nodes_drops_whole_element() {
     // Dropped: neither its attribute, its text nor its child may land on the last node that fit.
     xml.push_str("<N width=\"9\">lost<N>deeper</N></N>");
     xml.push_str("</N>");
-    both(&xml, |dom| {
+    both(xml.leak(), |dom| {
         assert_eq!(walk(dom).0, NODE_MAX as usize);
         assert_ne!(dom.node(NODE_MAX - 1).plot.size.width, 9);
         assert!(texts(dom).is_empty(), "{:?}", texts(dom));
@@ -61,7 +63,7 @@ fn dom_too_deep_drops_subtree_and_resumes() {
     for _ in 1..DOM_DEPTH_MAX + 2 { xml.push_str("</N>"); }
     // Parsing resumes normally once the dropped subtree is closed.
     xml.push_str("<N>after</N></N>");
-    both(&xml, |dom| {
+    both(xml.leak(), |dom| {
         assert_eq!(walk(dom), (DOM_DEPTH_MAX + 1, DOM_DEPTH_MAX - 1));
         assert_eq!(texts(dom), vec![String::from("after")]);
     });

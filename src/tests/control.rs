@@ -4,6 +4,7 @@ use std::{string::String, vec, vec::Vec};
 
 use crate::{control::{Control, ControlMode, IControl, LoaderRet}, surface::Surface};
 use crate::tests::helpers::PKG_SYS;
+use crate::tests::pkg_load::package;
 
 fn send(control: &mut Control, surface: &mut Surface, buf: &[u8]) -> String {
     let mut listeners: [Option<&mut dyn IControl>; 4] = [None, None, None, None];
@@ -86,4 +87,22 @@ fn control_new_pkg_clears_previous_error() {
     let res = send(&mut control, &mut surface, &buf);
     assert!(res.contains("pkg0\r\n"), "{res}");
     assert!(!control.is_loader_busy());
+}
+
+#[test]
+fn control_smaller_package_after_larger_one() {
+    let mut fb = vec![0u8; 8 * 8 / 8];
+    let mut surface = Surface::new(fb.as_mut_slice(), 8, 8);
+    let mut control = Control::default();
+
+    let mut buf = header(PKG_SYS.len());
+    buf.extend_from_slice(PKG_SYS);
+    assert!(send(&mut control, &mut surface, &buf).contains("pkg0\r\n"));
+
+    // The bytes the larger package left behind in the buffer must not count towards the CRC.
+    let small = package(&[crate::media::LIBMAGIC_IMAGE, 1, 0, 0xff, crate::media::LIBMAGIC_EOL]);
+    let mut buf = header(small.len());
+    buf.extend_from_slice(&small);
+    let res = send(&mut control, &mut surface, &buf);
+    assert!(res.contains("pkg0\r\n"), "{res}");
 }

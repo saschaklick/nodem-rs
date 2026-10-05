@@ -38,6 +38,16 @@ impl DOMTest {
     }
 }
 
+/// Loads test markup with `from_xml` when `alloc` is available, else with `from_xml_static`
+/// (the only XML loader without `alloc`), so the DOM tests run in both builds.
+#[cfg(all(feature = "dom", feature = "xml"))]
+pub fn load_xml(dom: &mut DOM, xml: &'static str) -> crate::dom::Ret {
+    #[cfg(feature = "alloc")]
+    return dom.from_xml(xml);
+    #[cfg(not(feature = "alloc"))]
+    return dom.from_xml_static(xml);
+}
+
 fn print(generated_image: &[u8], expected_image: &[u8], size: Size) {
     let mut outputs = [std::vec![], std::vec![]];    
 

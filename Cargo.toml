@@ -21,6 +21,8 @@ alloc = ["virtmach/alloc"]
 ui = []
 term = []
 base = ["dom", "xml", "ninepatch", "inspect"]
+# Runtime draws an animated cursor and a periodic "DEMO" popup over every page.
+demo = []
 
 [dependencies]
 log = "0.4.27"

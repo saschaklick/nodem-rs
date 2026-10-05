@@ -12,6 +12,11 @@ const MEDIA_SIZE: usize = 1024 * 8;
 static mut MEDIA_PKG: Option<Box<[u8]>> = None;
 #[cfg(not(feature = "alloc"))]
 static mut MEDIA_PKG: [u8; MEDIA_SIZE] = [0 as u8; MEDIA_SIZE];
+/// Length of the package being received. load_pkg's checksum covers everything it is handed, so it
+/// must see exactly this many bytes, not the whole static buffer (bytes left behind by an earlier,
+/// larger package made it fail with CRCFailure).
+#[cfg(not(feature = "alloc"))]
+static mut MEDIA_LEN: usize = 0;
 
 #[cfg(feature = "alloc")]
 fn media_pkg() -> &'static mut [u8] {
@@ -20,7 +25,8 @@ fn media_pkg() -> &'static mut [u8] {
 
 #[cfg(not(feature = "alloc"))]
 fn media_pkg() -> &'static mut [u8] {
-    unsafe { &mut *core::ptr::addr_of_mut!(MEDIA_PKG) }
+    let buf = unsafe { &mut *core::ptr::addr_of_mut!(MEDIA_PKG) };
+    &mut buf[..unsafe { MEDIA_LEN }]
 }
 
 impl IControlLoader for Surface {
@@ -31,6 +37,10 @@ impl IControlLoader for Surface {
                 #[cfg(feature = "alloc")]
                 unsafe {
                     *core::ptr::addr_of_mut!(MEDIA_PKG) = Some(vec![0u8; len].into_boxed_slice());
+                }
+                #[cfg(not(feature = "alloc"))]
+                unsafe {
+                    MEDIA_LEN = if len > MEDIA_SIZE { 0 } else { len };
                 }
                 media_pkg().len()
             },

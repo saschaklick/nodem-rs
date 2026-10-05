@@ -3,7 +3,7 @@ mod surface;
 mod dom;
 mod control;
 mod pkg_load;
-#[cfg(all(feature = "xml", feature = "std", feature = "alloc"))]
+#[cfg(all(feature = "xml", feature = "std"))]
 mod dom_limits;
 
 // #[test]
