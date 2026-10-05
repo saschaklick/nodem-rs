@@ -1,6 +1,8 @@
 mod helpers;
 mod surface;
 mod dom;
+mod control;
+mod pkg_load;
 #[cfg(all(feature = "xml", feature = "std", feature = "alloc"))]
 mod dom_limits;
 

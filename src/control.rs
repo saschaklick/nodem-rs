@@ -64,7 +64,8 @@ impl Control {
     }
     
     pub fn get_loader_progress(&self, range: usize) -> Option<usize> {
-        if self.loader.state == 0 { None } else { Some(range * self.loader.position / self.loader.size) }
+        // The size is only known once the full header has arrived (state 4).
+        if self.loader.state != 4 || self.loader.size == 0 { None } else { Some(range * self.loader.position / self.loader.size) }
     }
     
     pub fn get_loader_error(&self) -> LoaderRet {
@@ -117,8 +118,12 @@ impl Control {
                             },
                             "pkg"|"ota" => {
                                 self.mode = if line == "ota" { ControlMode::OTAMode } else { ControlMode::PKGMode };
+                                // Start from scratch: a transfer that broke off or failed earlier must not leave
+                                // the loader mid-header/mid-body or reporting its old error (busy forever).
+                                self.loader.state = 0;
                                 self.loader.position = 0;
                                 self.loader.size = 0;  
+                                self.loader.error = LoaderRet::Ok;
                                 log::info!("loader init ({})", self.get_mode_name());                                      
                             }
                             _ => {                                
@@ -153,20 +158,26 @@ impl Control {
                             }
                         }
                     }                                                             
-                    while buf_pos < buf.len() {                                            
+                    // Stop once the package is finished or rejected: what follows in the same buffer is commands again.
+                    while buf_pos < buf.len() && matches!(self.mode, ControlMode::PKGMode | ControlMode::OTAMode) {
                         let byte = buf[buf_pos];
                         buf_pos += 1;                        
                         match self.loader.state {                    
                             0..=2 => { self.loader.size += (byte as usize) << 8 * self.loader.state; self.loader.state += 1; },                            
                             3 => {                                
-                                if listener.process_loader_start(self.mode, self.loader.size) > 0 { 
-                                    self.loader.size += (byte as usize) << 24;
+                                self.loader.size += (byte as usize) << 24;
+                                if self.loader.size > 0 && listener.process_loader_start(self.mode, self.loader.size) > 0 { 
                                     self.loader.state = 4;                                                                                                          
                                     log::info!("loader start ({}): {}b", self.get_mode_name(), self.loader.size);
                                     Control::send_result( self.get_mode_name(), LoaderRet::CTR as u8, res).1.expect("");
                                 }else{
+                                    // Rejected (empty or too large): back to line mode, the rest of the buffer is commands again.
+                                    log::error!("loader rejected ({}): {}b", self.get_mode_name(), self.loader.size);
                                     self.loader.error = LoaderRet::NotEnoughSpace;
                                     Control::send_result( self.get_mode_name(), LoaderRet::NotEnoughSpace as u8, res).1.expect("");
+                                    self.mode = ControlMode::LineMode;
+                                    self.loader.state = 0;
+                                    self.loader.size = 0;
                                 }
                             },
                             4 => {                                

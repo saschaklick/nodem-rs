@@ -37,14 +37,24 @@ impl Media {
             csv.write_fmt(format_args!("{},\"Solid\",0,1,1,1,1,1,1\r\n", BORDER_RECT)).expect("");         
         }
         
-        csv.write_str("font_idx,id,source,height,base,mono\r\n").expect("");
+        // `glyphs` / `ranges`: how many glyph codes the font carries and which (8-bit codes, one range per
+        // pack, e.g. "32-126 228-252"), so a tool can tell what a package's fonts can render.
+        csv.write_str("font_idx,id,source,height,base,mono,glyphs,ranges\r\n").expect("");
         for font_idx in 0..FONT_MAX {
             let font = self.get_font(Identifier::Index(font_idx));
             if filter_source(font.source) || font.pack_count == 0 { continue; }
+            let mut glyphs: u32 = 0;
+            font_packs(&font, |first, last| glyphs += (last - first) as u32 + 1);
             csv.write_fmt(format_args!(
-                "{},\"{}\",{},{},{},{}\r\n",
-                font_idx, font.id, font.source, font.base_height, font.full_height, font.mono_width
+                "{},\"{}\",{},{},{},{},{},\"",
+                font_idx, font.id, font.source, font.base_height, font.full_height, font.mono_width, glyphs
             )).expect("");
+            let mut sep = "";
+            font_packs(&font, |first, last| {
+                csv.write_fmt(format_args!("{}{}-{}", sep, first, last)).expect("");
+                sep = " ";
+            });
+            csv.write_str("\"\r\n").expect("");
         }        
 
         #[cfg(feature = "dom")]
@@ -76,5 +86,20 @@ impl Media {
         csv.write_str("@0\r\n").expect("");
 
         Ok(())
+    }
+}
+
+/// Calls `f(first, last)` for each glyph pack of `font`. Walks only the pack headers (same layout as
+/// `Media::get_glyph`) and stops at the first malformed or truncated one.
+fn font_packs<F>(font: &crate::media::font::Font, mut f: F) where F: FnMut(u8, u8) {
+    let mut reader = Stream::new(font.data);
+    for _ in 0..font.pack_count {
+        let first = reader.read_u8();
+        let last = reader.read_u8();
+        if !reader.ok || first > last { break; }
+        let pack_len = reader.read_u16();
+        let pack_pos = reader.get_pos();
+        f(first, last);
+        reader.set_pos(pack_pos + pack_len as usize);
     }
 }

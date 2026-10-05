@@ -133,7 +133,7 @@ impl Runtime for Env<'_> {
          
             if self.control.is_some() && self.control.as_ref().unwrap().is_loader_busy() {
                 let control = self.control.as_mut().unwrap();
-                self.surface.draw_progress_screen(control.get_loader_progress(255).take().unwrap().try_into().unwrap(), control.get_loader_error() as u8);            
+                self.surface.draw_progress_screen(control.get_loader_progress(255).unwrap_or(0).try_into().unwrap_or(0), control.get_loader_error() as u8);            
             }else{
                 let clip = self.surface.clip;
                 #[cfg(feature = "vm")]

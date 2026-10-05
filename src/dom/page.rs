@@ -196,7 +196,7 @@ impl DOM {
         return err;            
     }
 
-    #[cfg(not(all(feature = "xml", feature = "alloc")))]
+    #[cfg(not(feature = "alloc"))]
     pub fn from_xml (&mut self, _xml: &str) -> Ret {       
         self.clear();
         log::error!("xml or alloc feature disabled");
