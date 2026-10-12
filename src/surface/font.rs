@@ -1,4 +1,3 @@
-
 use crate::surface::*;
 use crate::stream::*;
 use crate::media::image::*;
@@ -88,8 +87,8 @@ impl Surface {
                                     "mone" => 0x03,
                                     "tnrm" => 0x04,
                                     "tinv" => 0x05,
-                                    "fixh" => 0x06,
-                                    "varh" => 0x07,                                    
+                                    "varh" => 0x06,                                    
+                                    "fixh" => 0x07,                                    
                                     "spac" => 0x08,
                                     "line" => 0x09,
                                     "kern" => 0x0A,
@@ -155,8 +154,7 @@ impl Surface {
                                     instr_len = 0;                                    
                                     continue;
                                 }
-                            }
-
+                            }                            
                             let glyph = self.media.get_glyph(&font, chr);                        
                             let mut reader = Stream::new(glyph);
                             if reader.available() >= 1 {
@@ -176,7 +174,8 @@ impl Surface {
                                     if reader.available() >= GLYPH_HEADER_SIZE - 1 {
                                         let height = reader.read_u8();
                                         let mut x_offset = reader.read_i8();
-                                        let mut y_offset = reader.read_i8();                            
+                                        //let mut y_offset = reader.read_i8();                            
+                                        let y_offset = reader.read_i8();                            
                                         let pos = reader.get_pos();                                                        
                                         
                                         x_offset = match typesetting.mono_spaced {
@@ -185,9 +184,9 @@ impl Surface {
                                             Alignment::Center => { x_offset.checked_add(font.mono_width.checked_sub(width).unwrap_or(0).checked_div(2).unwrap_or(0) as i8).unwrap_or(x_offset) }
                                             Alignment::End =>    { x_offset.checked_add(font.mono_width.checked_sub(width).unwrap_or(0) as i8).unwrap_or(x_offset) }
                                         };
-                                        if typesetting.fixed_height {
-                                            y_offset = y_offset.checked_add(font.full_height.checked_sub(height).unwrap_or(0).checked_div(2).unwrap_or(0) as i8).unwrap_or(y_offset);
-                                        }
+                                        // if typesetting.fixed_height {
+                                        //     y_offset = y_offset.checked_add(font.full_height.checked_sub(height).unwrap_or(0).checked_div(2).unwrap_or(0) as i8).unwrap_or(y_offset);
+                                        // }
 
                                         if position.is_some() {
                                             let position = Point {
