@@ -12,7 +12,7 @@ extern crate alloc;
 use alloc::boxed::Box;
 
 #[cfg(feature = "vm")]
-pub const VM_INTERRUPT_CNT: usize = 10;
+pub const VM_INTERRUPT_CNT: usize = 16;
 
 struct RuntimePrivate {    
 }
@@ -145,14 +145,21 @@ impl Runtime for Env<'_> {
                     }
                     self.surface.clip = self.vm_clip;
 
+                    // Built-in interrupts sit at their fixed INDEX, the rest is dummy unless set_vm_interrupt fills it.
                     let mut interrupts: [&mut dyn SoftInterrupt; VM_INTERRUPT_CNT] = [
                         &mut interrupts::math::Interrupt {},
                         &mut interrupts::proc::Interrupt {},
                         &mut interrupts::string::Interrupt {},
-                        &mut interrupts::random::Interrupt {},
+                        &mut interrupts::dummy::Interrupt {}, // time
                         &mut interrupts::dummy::Interrupt {},
                         &mut interrupts::dummy::Interrupt {},
+                        &mut interrupts::dummy::Interrupt {},
+                        &mut interrupts::dummy::Interrupt {},
+                        &mut interrupts::dummy::Interrupt {}, // periph
                         &mut IntSurface { surface: &mut self.surface },
+                        &mut interrupts::dummy::Interrupt {},
+                        &mut interrupts::dummy::Interrupt {},
+                        &mut interrupts::dummy::Interrupt {},
                         &mut interrupts::dummy::Interrupt {},
                         &mut interrupts::dummy::Interrupt {},
                         &mut interrupts::dummy::Interrupt {},

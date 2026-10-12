@@ -17,7 +17,7 @@ pub const LIBMAGIC_PAGE:    u8 = 50;
 pub const LIBMAGIC_PROGRAM: u8 = 60;
 pub const LIBMAGIC_EOL:     u8 = 255;
 
-const MEDIALIB_HEADER_SIZE:   usize  = 1 + 2;
+const _MEDIALIB_HEADER_SIZE:   usize  = 1 + 2;
 const IMAGELIB_HEADER_SIZE:   usize  = 1 + 2 + 2;
 const FONTLIB_HEADER_SIZE:    usize  = 1 + 2 + 4;
 const BORDERLIB_HEADER_SIZE:  usize  = 1 + 2 + 6 + 8;

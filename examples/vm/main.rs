@@ -66,9 +66,8 @@ impl Example {
             (interrupts::math::NAME, interrupts::math::FUNCTIONS.as_slice()),
             (interrupts::proc::NAME, interrupts::proc::FUNCTIONS.as_slice()),
             (interrupts::string::NAME, interrupts::string::FUNCTIONS.as_slice()),
-            (interrupts::random::NAME, interrupts::random::FUNCTIONS.as_slice()),
-            (interrupts::time::NAME, interrupts::random::FUNCTIONS.as_slice()),
-            (interrupts::trig::NAME, interrupts::random::FUNCTIONS.as_slice()),
+            (interrupts::time::NAME, interrupts::time::FUNCTIONS.as_slice()),
+            (interrupts::periph::NAME, interrupts::periph::FUNCTIONS.as_slice()),
             (interrupts::surface::NAME, interrupts::surface::FUNCTIONS.as_slice())
         ]);
 
@@ -112,13 +111,13 @@ impl Example {
             &mut interrupts::math::Interrupt {},
             &mut interrupts::proc::Interrupt {},
             &mut interrupts::string::Interrupt {},
-            &mut interrupts::random::Interrupt {},
+            &mut interrupts::time::Interrupt {},
             &mut interrupts::dummy::Interrupt {},
-            &mut interrupts::trig::Interrupt {},
+            &mut interrupts::dummy::Interrupt {},
+            &mut interrupts::dummy::Interrupt {},
+            &mut interrupts::dummy::Interrupt {},
+            &mut interrupts::periph::Interrupt {},
             &mut IntSurface { surface: surface },
-            &mut interrupts::gpio::Interrupt {},
-            &mut interrupts::uart::Interrupt {},
-            &mut interrupts::i2c::Interrupt {},
         ];                   
 
         if !unsafe { PAUSED } || unsafe { RUN_TO_HLT } {
