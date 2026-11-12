@@ -1,27 +1,23 @@
+cfg_select! {
+    feature = "ui" => {
+        #[path = "../../impl/sdl2.rs"]
+        mod sdl2;
+        use sdl2::Example;
+    }
+    _ => {
+        #[path = "../../impl/term.rs"]        
+        mod term;
+        use term::Example;
+    }
+}
+
 use bytes::BytesMut;
+use nodem_rs::*;
+use nodem_rs::surface::*;
 use nodem_rs::int_surface::{ IntSurface };
 use nodem_rs::media::{ font::Alignment, Identifier };
 use virtmach::{self, VirtMach, Program, interrupts::{ self, SoftInterrupt }};
 
-
-#[cfg(feature = "ui")]
-#[path = "../../impl/sdl2.rs"]
-#[cfg(feature = "ui")]
-mod sdl2;
-#[cfg(feature = "ui")]
-use sdl2::Example;
-
-#[cfg(feature = "term")]
-#[path = "../../impl/term.rs"]        
-#[cfg(feature = "term")]
-mod term; 
-#[cfg(feature = "term")]
-use term::Example;
-
-
-use nodem_rs::*;
-use nodem_rs::surface::*;
-    
 pub static PKG_SYS: &'static [u8] = include_bytes!("../../../nodem-pkg/pkg/sys.pkg");
 
 static PROGRAM: &str = "

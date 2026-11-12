@@ -1,15 +1,15 @@
-#[cfg(feature = "ui")]
-#[path = "../../impl/sdl2.rs"]
-#[cfg(feature = "ui")]
-mod sdl2;
-#[cfg(feature = "ui")]
-use sdl2::Example;
-#[cfg(not(feature = "ui"))]
-#[path = "../../impl/term.rs"]        
-#[cfg(not(feature = "ui"))]
-mod term;
-#[cfg(not(feature = "ui"))]
-use term::Example;
+cfg_select! {
+    feature = "ui" => {
+        #[path = "../../impl/sdl2.rs"]
+        mod sdl2;
+        use sdl2::Example;
+    }
+    _ => {
+        #[path = "../../impl/term.rs"]        
+        mod term;
+        use term::Example;
+    }
+}
 
 use nostd_structs::algos::rand::lcg::LcgRng;
 use std::time::{SystemTime};
@@ -28,6 +28,7 @@ static mut HEARTBEAT: SystemTime = SystemTime::UNIX_EPOCH;
 impl Example {
     pub fn init(self: &mut Self, surface: &mut Surface) {
         surface.media.load_pkg(PKG_SYS.as_ptr(), PKG_SYS.len(), 0);
+        surface.clear(0x202020);
         unsafe { HEARTBEAT = SystemTime::now(); }
     }
 
@@ -35,12 +36,11 @@ impl Example {
         let mut rng = LcgRng::new(0);
         
         let p_last = unsafe { POINT };
-        let p_next = Point { x: (rng.next() as f32 / u64::MAX as f32 * (surface.width as f32 - 1.0)) as PosX, y: (rng.next() as f32 / u64::MAX as f32 * (surface.height as f32 - 1.0)) as PosY };
-        surface.draw_line(p_last, p_next, 1 as Color);        
-        surface.draw_line(p_last + Point { x: 1, y: 1 }, p_next + Point { x : 1, y: 1 }, 0 as Color);
+        let p_next = Point { x: (rng.next() as f32 / u64::MAX as f32 * (surface.width as f32 - 1.0)) as PosX, y: (rng.next() as f32 / u64::MAX as f32 * (surface.height as f32 - 1.0)) as PosY };        
+        surface.draw_line(p_last + Point { x: 1, y: 1 }, p_next + Point { x : 1, y: 1 }, 0x000000);
         unsafe { POINT = p_next; }
 
-        surface.draw_line(Point { x: (surface.width / 2) as PosX, y: (surface.height / 2) as PosY }, cursor, 1);
+        surface.draw_line(Point { x: (surface.width / 2) as PosX, y: (surface.height / 2) as PosY }, cursor, ((_repeat_cnt & 0xff)) << 16);
 
         unsafe {
             FPS_CNT += 1;
@@ -52,13 +52,13 @@ impl Example {
                 }
             });
         }
-        
 
         let fps_text = format!("{:3}", unsafe { FPS });
         let fps_size = surface.get_text_size(Identifier::Index(0), fps_text.as_str()) + Size { width: 5, height: 5 };
         let fps_area = Area { point: Point { x: 0, y: 0 }, size: fps_size };
-        surface.fill_rect(fps_area, 0);                
-        surface.draw_rect(Area { point: fps_area.point, size : fps_area.size - Size { width: 1, height: 1 } }, 1);                
+        surface.fill_rect(fps_area, 0x101010);                
+        surface.draw_rect(Area { point: fps_area.point, size : fps_area.size - Size { width: 1, height: 1 } }, 0x404040);                
+        surface.palette[1] = 0xffffff;
         surface.draw_text(Identifier::Index(0), &fps_text, Point { x: 2, y: 2 });
 
     }

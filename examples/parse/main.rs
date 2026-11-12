@@ -1,15 +1,15 @@
-#[cfg(feature = "ui")]
-#[path = "../../impl/sdl2.rs"]
-#[cfg(feature = "ui")]
-mod sdl2;
-#[cfg(feature = "ui")]
-use sdl2::Example;
-#[cfg(not(feature = "ui"))]
-#[path = "../../impl/term.rs"]        
-#[cfg(not(feature = "ui"))]
-mod term;
-#[cfg(not(feature = "ui"))]
-use term::Example;
+cfg_select! {
+    feature = "ui" => {
+        #[path = "../../impl/sdl2.rs"]
+        mod sdl2;
+        use sdl2::Example;
+    }
+    _ => {
+        #[path = "../../impl/term.rs"]        
+        mod term;
+        use term::Example;
+    }
+}
 
 use nodem_rs::*;
 use nodem_rs::media::Identifier;
