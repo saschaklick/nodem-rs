@@ -5,6 +5,7 @@ pub use u8 as ImageW;
 pub use u8 as ImageH;
 pub use u8 as ImageFormat;
 
+#[derive(Debug)]
 #[repr(u8)]
 pub enum ImageType {
     Dummy    = 0x00,
@@ -12,6 +13,7 @@ pub enum ImageType {
     // Indexed2 = 0x02,
     // Indexed4 = 0x03,
     // Indexed8 = 0x04,
+    RGB888   = 0x10
     // EOL
 }
 
@@ -31,12 +33,13 @@ impl Default for Image<'_> {
 
 #[derive(Copy, Clone)]
 pub struct Settings {
-    pub transparent_color: Color,
+    pub transparent_color: ColorType,
     pub use_mask: bool,
-    pub inverted: bool    
+    pub inverted: bool,
+    pub colors: [ColorType;2]   
 }
 impl Default for Settings {
-    fn default() -> Self { Settings { transparent_color: 0, use_mask: true, inverted: false } }
+    fn default() -> Self { Settings { transparent_color: 0, use_mask: true, inverted: false, colors: Color::COLORS } }
 }
 
 impl Media {

@@ -176,12 +176,24 @@ impl Media {
                             for value in values { page.put_i8(value); }
                         }                        
                         "background"=>{
-                            let value: u8 = value.parse().unwrap_or_else(|e| { log::error!("{}", e); return 0; } );
-                            page.put_u8(PageInstruction::NodeBackground as u8 | ((value as u8 & 0xf) << 4));                                                                            
+                            let _ =Color::parse(value).inspect(|color|{
+                                let rgb = Color::to_rgb(*color);
+                                page.put_u8(PageInstruction::NodeBackground as u8 | (0xf << 4));                                                                                                                                    
+                                page.put_u8(rgb[0]);
+                                page.put_u8(rgb[1]);
+                                page.put_u8(rgb[2]);
+                                page.put_u8(0xff);
+                            });                            
                         }
                         "color"=>{
-                            let value: u8 = value.parse().unwrap_or_else(|e| { log::error!("{}", e); return 1; } );   
-                            page.put_u8(PageInstruction::NodeColor as u8 | ((value as u8 & 0xf) << 4));                                                                                                                                                         
+                            let _ = Color::parse(value).inspect(|color|{
+                                let rgb = Color::to_rgb(*color);
+                                page.put_u8(PageInstruction::NodeColor as u8 | (0xf << 4));                                                                                                                                    
+                                page.put_u8(rgb[0]);
+                                page.put_u8(rgb[1]);
+                                page.put_u8(rgb[2]);
+                                page.put_u8(0xff);
+                            });                            
                         }
                         "border"|"frame"=>{        
                             let instruction = if key == "border" { PageInstruction::NodeBorder } else { PageInstruction::NodeFrame } as u8;

@@ -2,15 +2,15 @@ use crate::*;
 
 #[derive(Copy, Clone)]
 pub struct Style {
-    pub color: Color,
-    pub background: Color,
+    pub color: ColorType,
+    pub background: ColorType,
     pub border_idx: BorderIdx,
     pub font_idx: FontIdx
 }
 impl Default for Style {
     fn default() -> Self { Style { 
         color: 1,
-        background: Color::MAX,
+        background: Color::TRANSPARENT,
         border_idx: BORDER_MAX,
         font_idx:   FONT_MAX
     } }
@@ -19,16 +19,16 @@ impl Default for Style {
 impl Style {
     pub fn reset(&mut self) {
         self.color = 1;
-        self.background = Color::MAX;
+        self.background = Color::TRANSPARENT;
         self.border_idx = BORDER_MAX;
         self.font_idx = FONT_MAX; 
     }
 
-    pub fn set_background(&mut self, color: Color) {                
+    pub fn set_background(&mut self, color: ColorType) {                
         self.background = color;
     }
 
-    pub fn set_color(&mut self, color: Color) {                
+    pub fn set_color(&mut self, color: ColorType) {                
         self.color = color;
     }
 

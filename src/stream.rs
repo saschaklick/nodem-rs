@@ -103,9 +103,9 @@ impl <'a> BinaryStream<'a> {
         }
         match self.encoding {
             Encoding::Raw => {
-                let res = (self.data[self.pos / 8] >> (7 - (self.pos % 8))) & 1;
+                let ret = (self.data[self.pos / 8] >> (7 - (self.pos % 8))) & 1;
                 self.pos += 1;
-                res
+                ret
             },
             Encoding::RLEFixed => {
                 if self.rpt_cnt == 0 && self.raw_cnt == 0 {

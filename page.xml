@@ -1,0 +1,8 @@
+<div width="flex" height="flex" vertical="" background="#004">
+    <div width="flex">
+        <div width="flex" margin="0" padding="2" border="1" background="1">{tinv}HELLO.........</div>
+        <div margin="1" padding="1" background="0">HELLO</div>    
+        <div width="flex" margin="0" padding="2" border="1" background="#808000">{col:#0000ff}HELLO.........</div>    
+    </div>
+    <div width="flex" height="" margin="1" padding="1" border="1" background="#555555">{img:GatoColor}{col:#008}{bg:#004}{img:Gato}</div>   
+</div>

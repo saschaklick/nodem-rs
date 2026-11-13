@@ -97,8 +97,8 @@ impl Surface {
 
                     let hidden= node.visibility() == Visibility::Hidden;
 
-                    if !hidden && style.background != Color::MAX {
-                        self.fill_rect(Area { point: p, size : s }, self.palette[style.background as usize]);
+                    if !hidden && style.background != Color::TRANSPARENT {
+                        self.fill_rect(Area { point: p, size : s }, style.background);
                     }                                        
                                     
                     self.media.typesetting.inverted = style.color == 0;

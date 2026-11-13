@@ -2,8 +2,7 @@ use log;
 use core::fmt::Write;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
-use crate::media::*;
-use crate::media::font::*;
+use crate::media::{ *, font::*, image::* };
 
 const PKG_HEADER: &str = "PKG0";
 
@@ -62,8 +61,8 @@ impl Media {
         Bytes::from(res)
     }
     
-    fn optimize_stream (source: &[u8], use_rle: bool) -> Bytes{                    
-        if source[0] != Encoding::Raw as u8 || use_rle == false{
+    fn optimize_stream (format: u8, source: &[u8], use_rle: bool) -> Bytes{                    
+        if format != ImageType::Indexed1 as u8 || source[0] != Encoding::Raw as u8 || use_rle == false{
             let mut res_raw = BytesMut::new();
             res_raw.put(source);
             return Bytes::from(res_raw);
@@ -95,14 +94,14 @@ impl Media {
         for index in 0 ..= 255 - 2 {
             let image = self.get_image(Identifier::Index(index));                 
             let image_data = &mut Bytes::copy_from_slice(image.data);                        
-            let _type = image_data.get_u8();
+            let format = image_data.get_u8();
             let width = image_data.get_u8();
             let height = image_data.get_u8();
             if (image.source >= LIBRARY_MAX) || width == 0 || height == 0 ||  ((1u8 << image.source) & sources) == 0 {
                 continue;
             }                        
-            let data = Media::optimize_stream(&image_data.slice(0 ..), optimize);
-            let mask = if image.mask.is_some() { Media::optimize_stream(&image.mask.unwrap(), optimize) } else { Bytes::new() };            
+            let data = Media::optimize_stream(format, &image_data.slice(0 ..), optimize);
+            let mask = if image.mask.is_some() { Media::optimize_stream(ImageType::Indexed1 as u8, &image.mask.unwrap(), optimize) } else { Bytes::new() };            
             if data.len() >= u16::MAX as usize{
                 log::error!("image data #{index} too large");
                 continue;
@@ -111,7 +110,7 @@ impl Media {
                 log::error!("image mask #{index} too large");
                 continue;
             }               
-            Media::insert_image(&mut images_lib, index, image.id, width, height, data.to_vec().as_slice(), mask.to_vec().as_slice());                
+            Media::insert_image(&mut images_lib, index, image.id, format, width, height, data.to_vec().as_slice(), mask.to_vec().as_slice());                
             log::info!("img #{}.{} [{:5}b] [{}b/{}b]", image.source, index, data.len() + mask.len(), data.len(), mask.len());
         }
         images_lib.put_u8(0xff);
@@ -143,7 +142,7 @@ impl Media {
                         let header = &glyph[0 .. GLYPH_HEADER_SIZE];
                         let data = &glyph[GLYPH_HEADER_SIZE .. glyph.len()];
                         glyphs.put(header.as_ref());
-                        glyphs.put(Media::optimize_stream(data, true));                                                                    
+                        glyphs.put(Media::optimize_stream(ImageType::Indexed1 as u8, data, true));                                                                    
                         dir.put_u16_ne(glyphs.len() as u16);                    
                     }
                 }                

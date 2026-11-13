@@ -11,6 +11,9 @@ cfg_select! {
     }
 }
 
+use std::fs::File;
+use std::io::Read;
+
 use nodem_rs::*;
 use nodem_rs::media::Identifier;
 use nodem_rs::surface::*;
@@ -25,12 +28,24 @@ impl Example {
     }
 
     pub fn repeat(self: &mut Self, surface: &mut Surface, repeat_cnt: u32, cursor: Point, _action: u8) {        
-        match repeat_cnt {                        
-            0  => { self.dom.from(surface.media.get_page(253).content); }
-            0 .. 64 => { self.dom.node_ref_mut(2).set_height(repeat_cnt as SizeH); }
-            72 => { self.dom.from(surface.media.get_page(1).content); }
-            _ => {}
-        }        
+        match File::open("page.xml") {                    
+            Ok(mut file) => {                        
+                if repeat_cnt == 0 {
+                    let mut buf = [0u8;1024];
+                    let _ = file.read(&mut buf);
+                    let xml = str::from_utf8(&buf).unwrap_or("").trim_matches(char::from(0));
+                    self.dom.from_xml(&xml);                        
+                }
+            }
+            Err(_) => {
+                match repeat_cnt {                        
+                    0  => { self.dom.from(surface.media.get_page(253).content); }
+                    0 .. 64 => { self.dom.node_ref_mut(2).set_height(repeat_cnt as SizeH); }
+                    72 => { self.dom.from(surface.media.get_page(1).content); }                
+                    _ => {}
+                }        
+            }            
+        }                               
 
         surface.clear(0);
         surface.fullscreen(&mut self.dom);

@@ -8,7 +8,7 @@
 			"args": [
 				"--example",
 				"construct",
-				"--features=term,dom,ninepatch"
+				"--features=index1,term,dom,ninepatch"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
@@ -25,7 +25,7 @@
 			"args": [
 				"--example",
 				"parse",
-				"--features=term,dom,xml,alloc"
+				"--features=index1,term,dom,xml,alloc"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
@@ -42,7 +42,7 @@
 			"args": [
 				"--example",
 				"construct",
-				"--features=ui,dom,ninepatch"
+				"--features=rgb24,ui,dom,ninepatch"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
@@ -59,11 +59,11 @@
 			"args": [
 				"--example",
 				"parse",
-				"--features=ui,dom,xml,alloc"
+				"--features=rgb565,ui,dom,xml,alloc,inspect"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
-				"NODEM_ARCH": "EXAMPLE"
+				"NODEM_ARCH": "EXAMPLE"				
 			},
 			"problemMatcher": [
 				"$rustc"
@@ -76,7 +76,7 @@
 			"args": [
 				"--example",
 				"empty",
-				"--features=ui"
+				"--features=rgb24,ui"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
@@ -93,7 +93,7 @@
 			"args": [
 				"--example",
 				"draw",
-				"--features=ui"
+				"--features=rgb24,ui"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
@@ -110,7 +110,7 @@
 			"args": [
 				"--example",
 				"vm",
-				"--features=ui,dom,vm,compile,basic,alloc"
+				"--features=index1,ui,dom,vm,compile,basic,alloc"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
@@ -126,7 +126,7 @@
 			"command": "test",
 			"args": [
 				"--lib",
-				"--features=std,xml,dom,ninepatch,vm,inspect,alloc",
+				"--features=index1,std,xml,dom,ninepatch,vm,inspect,alloc",
 				"--",
 				"tests",
 				"--nocapture",

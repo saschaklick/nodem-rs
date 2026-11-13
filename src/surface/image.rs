@@ -6,20 +6,20 @@ impl Surface {
     pub fn draw_image(&self, ident: Identifier, position: Point, drawing: Option<Settings>) -> Size {
         let image = self.media.get_image(ident);    
         let mut reader = Stream::new(image.data);
-        let drawing = drawing.unwrap_or(self.media.drawing);
+        let drawing = drawing.unwrap_or(self.media.drawing);        
 
         if reader.available() >= 3 {
             let format = reader.read_u8();
             let width = reader.read_u8();
             let height = reader.read_u8();
 
-            if format == ImageType::Dummy as ImageFormat {
+            if format == ImageType::Dummy as u8 {
                 self.draw_rect(Area { point: position, size: Size { width: width as SizeW, height: height as SizeH } }, 1);
             }else{
                 if image.mask.is_none(){                
-                    self.render_stream(format, width, height, &image.data[IMAGE_HEADER_SIZE ..], position, drawing.inverted, drawing.transparent_color);
+                    self.render_stream(format, width, height, &image.data[IMAGE_HEADER_SIZE ..], position, drawing.inverted, &drawing.colors);
                 }else{                                        
-                    self.render_masked_stream(format, width, height, &image.data[IMAGE_HEADER_SIZE ..], &image.mask.unwrap(), position, drawing.inverted, drawing.use_mask);
+                    self.render_masked_stream(format, width, height, &image.data[IMAGE_HEADER_SIZE ..], &image.mask.unwrap(), position, drawing.inverted, &drawing.colors, drawing.use_mask);
                 }
             }
             return Size { width: width as SizeW, height: height as SizeH }
@@ -43,26 +43,26 @@ impl Surface {
         }
     }
 
-    pub fn render_stream(&self, _format: ImageFormat, width: ImageW, height: ImageH, data: &[u8], position: Point, inverted: bool, transparent_color: Color) {
+    pub fn render_stream(&self, _format: ImageFormat, width: ImageW, height: ImageH, data: &[u8], position: Point, inverted: bool, colors: &[ColorType]) {
         let mut p = position;
         let mut r_i = 0;    
 
-        let mut reader = BinaryStream::new(data);
-            
+        let mut reader: BinaryStream<'_> = BinaryStream::new(data);    
         for _p_i in 0 .. width as usize * height as usize {
             let pixel = reader.read_bit();
             if reader.ok == false {
                 break;
             }
             
-            if transparent_color == 255 || transparent_color != pixel {                    
-                let mut color_no = self.get_color(pixel as usize);
+            if pixel == 1 {            
+                let mut color = if (pixel as usize) < colors.len() { colors[pixel as usize] } else { Color::TRANSPARENT };
                 if inverted == true {
-                    color_no = if color_no == 0 { 1 } else { 0 };
-                }
-                let color = self.palette[color_no as usize];
-                self.draw_pixel(p, color);
-            }        
+                    color = Color::invert(color);
+                }                              
+                if colors[0] != color {                                                            
+                    self.draw_pixel(p, color);
+                }        
+            }
 
             r_i += 1;
             if r_i == width {
@@ -78,34 +78,47 @@ impl Surface {
         }
     }
 
-    pub fn render_masked_stream(&self, _format: ImageFormat, width: ImageW, height: ImageH, image_data: &[u8], mask_data: &[u8], position: Point, inverted: bool, use_mask: bool) {
+    pub fn render_masked_stream(&self, format: ImageFormat, width: ImageW, height: ImageH, image_data: &[u8], mask_data: &[u8], position: Point, inverted: bool, colors: &[ColorType], use_mask: bool) {
         let mut p = position;
         let mut r_i = 0;    
         
-        let mut image_reader = BinaryStream::new(image_data);
+        let mut image_reader = Stream::new(&image_data[1..]);
+        let mut image_reader_bit = BinaryStream::new(image_data);        
         let mut mask_reader = BinaryStream::new(&mask_data);        
-            
-        for _p_i in 0 .. width as usize * height as usize {
-            let pixel = image_reader.read_bit();        
+
+        for _p_i in 0 .. width as usize * height as usize {            
             let masked = mask_reader.read_bit();
-            if image_reader.ok == false || mask_reader.ok == false {
+            if mask_reader.ok == false {
                 break;
             }
-                    
-            let mut color_no = self.get_color(pixel as usize);
-            if inverted == true {
-                color_no = if color_no == 0 { 1 } else { 0 };
-            }
-            let color = self.palette[color_no as usize];
-
-            if use_mask == true {
-                if masked == 1 {                
-                    self.draw_pixel(p, color);
+            
+            let mut color: ColorType;
+            if format == ImageType::Indexed1 as ImageFormat {
+                let pixel = image_reader_bit.read_bit();        
+                if image_reader_bit.ok == false {
+                    break;
                 }
+                color = if (pixel as usize) < colors.len() { colors[pixel as usize] } else { Color::TRANSPARENT };
+            }else
+            if format == ImageType::RGB888 as ImageFormat {
+                let r = image_reader.read_u8();
+                let g = image_reader.read_u8();
+                let b = image_reader.read_u8();
+                if image_reader.ok == false {
+                    break;
+                }
+                color = Color::from_rgb(r, g, b);                
             }else{
+                break;
+            }                                 
+
+            if !use_mask || masked == 1 {                
+                if inverted == true {
+                    color = Color::invert(color);
+                }   
                 self.draw_pixel(p, color);
             }
-
+                                
             r_i += 1;
             if r_i == width {
                 r_i = 0;

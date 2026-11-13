@@ -17,6 +17,8 @@ use tokio::{ net::TcpListener, io::AsyncWriteExt };
 static SCALE: u32          = 5;
 static WINDOW_PADDING: u32 = 64;
 
+const SDL_COLORS: [Color;2] = [Color::RGB(32, 32, 32), Color::RGB(196, 196, 196)];
+
 pub struct Example {    
     #[allow(dead_code)]
     #[cfg(feature = "dom")]
@@ -32,7 +34,7 @@ impl Example {
     
     #[allow(dead_code)]
     pub async fn main() {
-        SimpleLogger::new().init().unwrap();        
+        SimpleLogger::new().with_level(log::LevelFilter::Info).init().unwrap();       
 
         SDL2Window::new(Example::new()).await;
     }
@@ -66,12 +68,9 @@ impl SDL2Window {
             .build()
             .unwrap();   
             
-        let mut pixels: [u8; SCREEN_BUFFER_SIZE] = [0b00000000; SCREEN_BUFFER_SIZE];
+        let mut pixels: [u8; SCREEN_BUFFER_SIZE] = [0; SCREEN_BUFFER_SIZE];        
         
         let mut nodem_surface = surface::Surface::new(addr_of_mut!(pixels), SCREEN_WIDTH, SCREEN_HEIGHT);        
-
-        let colors = [Color::RGB(32, 32, 32), Color::RGB(196, 196, 196)];
-        let palette: Palette = Palette::with_colors(&colors).unwrap();
 
         self.example.init(&mut nodem_surface);
 
@@ -155,8 +154,25 @@ impl SDL2Window {
                 
             let mut window_surface = window.surface(&event_pump).unwrap();      
 
-            let mut surface: Surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 / 8, PixelFormatEnum::Index1MSB).unwrap();
-            surface.set_palette(&palette).ok();  
+            let mut surface: Surface;
+            #[cfg(feature = "index1")]
+            {                
+                let palette: Palette = Palette::with_colors(&SDL_COLORS).unwrap();
+                surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 / 8, PixelFormatEnum::Index1MSB).unwrap();
+                surface.set_palette(&palette).ok();
+            }
+            #[cfg(feature = "rgb332")]
+            {                                
+                surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 * 1, PixelFormatEnum::RGB332).unwrap();                            
+            }
+            #[cfg(feature = "rgb565")]
+            {                                
+                surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 * 2, PixelFormatEnum::RGB565).unwrap();                            
+            }
+            #[cfg(feature = "rgb24")]
+            {                                
+                surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 * 3, PixelFormatEnum::RGB24).unwrap();                            
+            }
 
             let r1 = Rect::new(0,0, surface.width(), surface.height() );
             let r2 = Rect::new(

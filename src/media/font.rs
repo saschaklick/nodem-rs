@@ -58,7 +58,7 @@ pub struct Settings {
     pub line_spacing: u8,
     pub space_width: u8,    
     pub placeholders: bool,
-    pub inverted: bool  
+    pub inverted: bool    
 }
 impl Default for Settings {
     fn default() -> Self { Settings { default_idx: 0, active_idx: 0, mono_spaced: Alignment::Proportional, fixed_height: true, glyph_spacing: 1, line_spacing: 1, space_width: 3, placeholders: true, inverted: false } }

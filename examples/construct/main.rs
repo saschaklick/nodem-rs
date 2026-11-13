@@ -71,8 +71,8 @@ opqrstuvwxyz{|}~";
         dom.node_ref_mut(4).set_flex(0, 1);
         dom.node_ref_mut(5).set_flex(0, 0);
         
-        dom.request_style(4).set_background(1);
-        dom.request_style(4).set_color(0);
+        dom.request_style(4).set_background(Color::COLORS[0]);
+        dom.request_style(4).set_color(Color::COLORS[1]);
         dom.set_border(1, BORDER_RECT);
         dom.set_border(2, BORDER_RECT);
         dom.set_border(3, BORDER_RECT);        

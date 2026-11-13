@@ -2,7 +2,7 @@ use virtmach::{ *, interrupts::{ SoftInterrupt } };
     #[cfg(feature = "compile")]
 use virtmach::{ interrupts::{ surface, SoftInterruptFunction } };
 use crate::surface::Surface;
-use crate::{ Area, Size, Point, PosX, PosY, SizeW, SizeH, Color, BorderIdx, media::Identifier };
+use crate::{ Area, Size, Point, PosX, PosY, SizeW, SizeH, ColorType, BorderIdx, media::Identifier };
 
 pub struct IntSurface <'a> {    
     pub surface: &'a mut Surface
@@ -23,14 +23,14 @@ impl SoftInterrupt for IntSurface <'_> {
         
         match op {
             0 => {
-                let color = vm.stack_pop() as u8;                
+                let color = vm.stack_pop() as crate::ColorType;                
                 self.surface.clear(color);
             }     
             1 | 6 => {
                 let point = Point { x: vm.stack_pop() as PosX, y: vm.stack_pop() as PosY };                
                 let value = vm.stack_pop();                
                 match op {
-                    1 => { self.surface.draw_pixel(point, value as Color); }
+                    1 => { self.surface.draw_pixel(point, value as ColorType); }
                     _ => { self.surface.draw_image(Identifier::Index(value as u8), point, None); }
                 }
             }    
@@ -38,15 +38,15 @@ impl SoftInterrupt for IntSurface <'_> {
                 let area = Area { point: Point { x: vm.stack_pop() as PosX, y: vm.stack_pop() as PosY }, size: Size { width: vm.stack_pop() as SizeW, height: vm.stack_pop() as SizeH } };                
                 let value = vm.stack_pop();                
                 match op {
-                    2 => self.surface.draw_rect(area, value as Color),
-                    3 => self.surface.fill_rect(area, value as Color),                    
+                    2 => self.surface.draw_rect(area, value as ColorType),
+                    3 => self.surface.fill_rect(area, value as ColorType),                    
                     _ => self.surface.draw_border(value as BorderIdx, area)
                 }
             }
             4 => {
                 let p_0 = Point { x: vm.stack_pop() as PosX, y: vm.stack_pop() as PosY };                
                 let p_1 = Point { x: vm.stack_pop() as PosX, y: vm.stack_pop() as PosY };                
-                let color = vm.stack_pop() as u8;                
+                let color = vm.stack_pop() as crate::ColorType;                
                 self.surface.draw_line(p_0, p_1, color);
             }    
             10 => {

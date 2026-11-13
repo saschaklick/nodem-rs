@@ -50,7 +50,8 @@ impl Surface {
         let mut instr_str: Option<&str> = None;
         let mut value_str: Option<&str> = None;
         let mut instr_len: usize = 0;
-        let mut instruction = [0u8;5];
+        let mut instruction = [0u8;5];        
+        let mut colors: [ColorType;2] = self.palette;
         loop {            
             let mut chrs = rem_text.chars();
             let chr_res = chrs.next();            
@@ -77,6 +78,15 @@ impl Surface {
                             "font" => {
                                 instruction[0] = crate::surface::FONT as u8;
                                 instruction[1] = value_str.unwrap_or("0").trim().parse::<u8>().unwrap_or(u8::MAX);
+                            }
+                            "col" | "bg" => {
+                                let color_n = if name == "col" { 1 } else { 0 };
+                                instruction[0] = crate::surface::COLOR as u8;
+                                let _ = Color::parse(value_str.unwrap_or("-").trim()).inspect(|value| {                                    
+                                    colors[color_n] = *value;
+                                }).inspect_err(|_|{                                    
+                                    colors[color_n] = self.palette[color_n];                                    
+                                });                        
                             }
                             "mons" | "mono" | "mone"| "prop"| "tnrm" | "tinv" | "fixh" | "varh" | "spac" | "line" | "kern" => {
                                 instruction[0] = crate::surface::TYPESETTING as u8;
@@ -159,9 +169,9 @@ impl Surface {
                             let mut reader = Stream::new(glyph);
                             if reader.available() >= 1 {
                                 let width = reader.read_u8();                    
-                                if width == 0 && typesetting.placeholders == true {  
-                                    let color_no = if typesetting.inverted { 0 } else { 1 };
-                                    let color = self.palette[color_no as usize];
+                                if width == 0 && typesetting.placeholders == true {                                      
+                                    let color = colors[1];
+                                    if typesetting.inverted { Color::invert(color); }
                                     if position.is_some() {
                                         self.draw_rect(Area { point: cursor, size: Size { width: font.mono_width as SizeW, height: font.base_height as SizeH } }, color);                                        
                                     }
@@ -193,8 +203,8 @@ impl Surface {
                                                 x: (cursor.x as PosX).checked_add(x_offset as PosX).unwrap_or(PosX::MAX),
                                                 y: (cursor.y as PosY).checked_add(y_offset as PosY).unwrap_or(PosY::MAX)
                                             };                            
-                                            
-                                            Surface::render_stream(self, ImageType::Indexed1 as u8, width, height, &glyph[pos ..], position, typesetting.inverted, 0);
+                                                                                                                                    
+                                            Surface::render_stream(self, ImageType::Indexed1 as u8, width, height, &glyph[pos ..], position, typesetting.inverted, &[Color::TRANSPARENT, colors[1]]);
                                             //self.draw_rect(Area { point: position, size: Size { width: width as SizeW, height: height as SizeH } }, 1);                         
                                         }
                                                                     
@@ -222,6 +232,7 @@ impl Surface {
                                 Identifier::Index(image_idx)
                             };
                             let image_size = if position.is_some() {
+                                drawing.colors = colors;
                                 self.draw_image(ident, cursor, Some(drawing))                                
                             } else {
                                 self.get_image_size(ident)
@@ -240,7 +251,8 @@ impl Surface {
                             };
                         }
                         crate::surface::DRAWING     => { apply_drawing(&mut drawing, instruction[1] as u8); }
-                        crate::surface::TYPESETTING => { apply_typesetting(&mut typesetting, instruction[1] as u8, instruction[2] as u8); }                    
+                        crate::surface::TYPESETTING => { apply_typesetting(&mut typesetting, instruction[1] as u8, instruction[2] as u8); }     
+                        crate::surface::COLOR       => {}              
                         _ => {}
                     }
                     instruction[0] = 0;

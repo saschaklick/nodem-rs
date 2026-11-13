@@ -6,7 +6,10 @@ pub use i16 as PosY;
 pub use u16 as SizeW;
 pub use u16 as SizeH;
 pub use i8  as Offset;
-pub use u8  as Color;
+
+pub mod mode;
+pub use mode::Color as Color;
+pub use mode::ColorType as ColorType;
 
 pub use u8      as LibraryIdx;
 pub use u8      as NodeIdx;
@@ -25,11 +28,13 @@ pub const SCREEN_WIDTH:  SizeW = 128;
 pub const SCREEN_HEIGHT: SizeH = 64;
 
 pub const SCREEN_SIZE:        usize = SCREEN_WIDTH as usize * SCREEN_HEIGHT as usize;
-pub const SCREEN_BUFFER_SIZE: usize = SCREEN_SIZE / 8;
+pub const SCREEN_BUFFER_SIZE: usize = (SCREEN_SIZE * Color::BITS_PER_PIXEL) / 8;
 
 pub const SURFACE_WIDTH:  SizeW = SCREEN_WIDTH;
 pub const SURFACE_HEIGHT: SizeH = SCREEN_HEIGHT;
-pub const SURFACE_BUFFER_SIZE:usize  = (SURFACE_WIDTH as usize * SURFACE_HEIGHT as usize) / 8;
+
+pub const SURFACE_SIZE:       usize = SCREEN_WIDTH as usize * SCREEN_HEIGHT as usize;
+pub const SURFACE_BUFFER_SIZE:usize = (SURFACE_SIZE * Color::BITS_PER_PIXEL) / 8;
 
 pub const LIBRARY_MAX:   LibraryIdx  = 4;
 
@@ -90,6 +95,8 @@ pub mod media;
 #[cfg(feature = "runtime")]
 pub mod runtime;
 
+#[cfg(feature = "vm")]
+pub use virtmach;
 #[cfg(feature = "vm")]
 pub mod int_surface;
 

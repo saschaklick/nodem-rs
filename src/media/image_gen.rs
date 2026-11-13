@@ -1,17 +1,20 @@
 use bytes::{Buf, BufMut, BytesMut};
 
-use crate::media::*;
+extern crate alloc;
+use alloc::vec::Vec;
+
+use crate::media::{ *, image::* };
 
 static mut IMAGE_IMPORT_LIB: Option<BytesMut> = None;
 
 impl Media {
-    pub(crate) fn insert_image(dest: &mut BytesMut, index: u8, id: &str, width: u8, height: u8, data: &[u8], mask: &[u8] ) {        
+    pub(crate) fn insert_image(dest: &mut BytesMut, index: u8, id: &str, format: u8, width: u8, height: u8, data: &[u8], mask: &[u8] ) {        
         dest.put_u8(index);
         dest.put_u8(id.len() as u8);
         dest.put(id.as_bytes());
         dest.put_u16_ne(data.len() as u16 + 3);
         dest.put_u16_ne(mask.len() as u16);
-        dest.put_u8(1);
+        dest.put_u8(format);
         dest.put_u8(width);
         dest.put_u8(height);
         dest.put(data);
@@ -41,7 +44,27 @@ impl Media {
                 IMAGE_IMPORT_LIB = Some(buf);
             }
             lib = IMAGE_IMPORT_LIB.take().unwrap();            
+        }
+
+        
+        let mut colors: Vec<u32> = Vec::new();
+        for i in (0..pixels.len()).step_by(4) {
+            if pixels[i + 3] > 0 {
+                let rgba: u32 = (pixels[i + 0] as u32) << 0 | (pixels[i + 0] as u32) << 8 | (pixels[i + 0] as u32) << 16;
+                if !(colors.contains(&rgba)) { colors.push(rgba); }
+            }
         }        
+        
+        let format = match colors.len() {
+            0 => {
+                log::error!("empty image");
+                return;
+            },
+            1..=2 => ImageType::Indexed1,
+            _ => ImageType::RGB888
+        };
+
+        log::info!("amount of colors: {} -> {:?}", colors.len(), format);
 
         let mut data = BytesMut::new();
         let mut mask = BytesMut::new();
@@ -65,9 +88,6 @@ impl Media {
             let r = pixels[pos + 0];
             let g = pixels[pos + 1];
             let b = pixels[pos + 2];            
-            if (r as i16 + g as i16 + b as i16) > thresholds[((i % width as usize) + ((i / width as usize) % 2)) % 2] {
-                data_byte |= 1 << (7 - (i % 8));
-            }
             if alpha {
                 let a = pixels[pos + 3];
                 if a != 255 {
@@ -77,13 +97,26 @@ impl Media {
                     mask_byte |= 1 << (7 - (i % 8));
                 }
             }
-            if i % 8 == 7 || i == pixel_cnt - 1 {
-                data.put_u8(data_byte);
-                data_byte = 0;
-                if alpha {
-                    mask.put_u8(mask_byte);
-                    mask_byte = 0;
-                }
+            match format {                
+                ImageType::Indexed1 => {
+                    if (r as i16 + g as i16 + b as i16) > thresholds[((i % width as usize) + ((i / width as usize) % 2)) % 2] {
+                        data_byte |= 1 << (7 - (i % 8));
+                    }            
+                    if i % 8 == 7 || i == pixel_cnt - 1 {
+                        data.put_u8(data_byte);
+                        data_byte = 0;
+                    }
+                },
+                ImageType::RGB888 => {
+                    data.put_u8(r);
+                    data.put_u8(g);
+                    data.put_u8(b);
+                },
+                _ => {}
+            }            
+            if alpha && (i % 8 == 7 || i == pixel_cnt - 1) {                             
+                mask.put_u8(mask_byte);
+                mask_byte = 0;
             }
             pos += pixel_size;
         }  
@@ -98,7 +131,7 @@ impl Media {
         loop {                        
             let idx = reader.get_u8();                                        
             if idx == 255 {
-                Media::insert_image(&mut lib2, index, name, width, height, &data, &mask);   
+                Media::insert_image(&mut lib2, index, name, format as u8, width, height, &data, &mask);   
                 lib2.put_u8(255);
                 break;
             }            

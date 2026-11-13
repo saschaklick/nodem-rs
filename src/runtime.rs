@@ -97,7 +97,11 @@ pub struct Env <'a>{
     #[cfg(feature = "vm")]
     vm_clip: Clip,
     #[cfg(feature = "vm")]
-    vm_interrupts: [Option<Box<dyn SoftInterrupt>>; VM_INTERRUPT_CNT]
+    vm_interrupts: [Option<Box<dyn SoftInterrupt>>; VM_INTERRUPT_CNT],
+    /// Asked once per frame before the vm runs; returning false skips the vm for this frame
+    /// (rendering carries on). Lets a platform honor time waits and the time tick.
+    #[cfg(feature = "vm")]
+    pub vm_gate: Option<fn(&VirtMach) -> bool>
 }
 
 impl Env<'_> {
@@ -115,6 +119,8 @@ impl Env<'_> {
             vm_clip: Clip { p0: Point { x: 0, y: 0 }, p1: Point { x: width as PosX, y: height as PosY } },
             #[cfg(feature = "vm")]
             vm_interrupts: Default::default(),
+            #[cfg(feature = "vm")]
+            vm_gate: None,
         }
     }
 
@@ -170,7 +176,9 @@ impl Runtime for Env<'_> {
                         }
                     }
 
-                    self.vm.run(1024, &mut interrupts);
+                    if self.vm_gate.map_or(true, |gate| gate(&self.vm)) {
+                        self.vm.run(1024, &mut interrupts);
+                    }
                     self.vm_clip = self.surface.clip;
                     self.surface.clip.reset(self.surface.width, self.surface.height);
                 }

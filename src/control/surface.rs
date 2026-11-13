@@ -21,16 +21,16 @@ impl IControl for Surface {
             });            
             let mut ret = Ret::Ok;
             match cmd.unwrap_or("").trim() {
-                "c" => { surface.clear(values[0] as Color); }
-                "p" => { surface.draw_pixel(Point{ x: values[0] as PosX, y: values[1] as PosY }, values[2] as Color); }
-                "r" => { surface.draw_rect(Area { point: Point{ x: values[0] as PosX, y: values[1] as PosY }, size : Size { width: values[2], height: values[3] } }, values[4] as Color); }
-                "f" => { surface.fill_rect(Area { point: Point{ x: values[0] as PosX, y: values[1] as PosY }, size : Size { width: values[2], height: values[3] } }, values[4] as Color); }
+                "c" => { surface.clear(values[0] as ColorType); }
+                "p" => { surface.draw_pixel(Point{ x: values[0] as PosX, y: values[1] as PosY }, values[2] as ColorType); }
+                "r" => { surface.draw_rect(Area { point: Point{ x: values[0] as PosX, y: values[1] as PosY }, size : Size { width: values[2], height: values[3] } }, values[4] as ColorType); }
+                "f" => { surface.fill_rect(Area { point: Point{ x: values[0] as PosX, y: values[1] as PosY }, size : Size { width: values[2], height: values[3] } }, values[4] as ColorType); }
                 "t" => { surface.draw_text(Identifier::Index(values[2] as u8), text, Point { x: values[0] as PosX, y: values[1] as PosY }); }
                 "T" => { let size = surface.get_text_size(Identifier::Index(values[0] as u8), text); return (true, res.write_fmt(format_args!("{},{}", size.width, size.height))); }
                 "i" => { surface.draw_image(Identifier::Both(values[2] as u8, text), Point { x: values[0] as PosX, y: values[1] as PosY }, None); }
                 "b" => { surface.draw_border(values[4] as u8, Area { point: Point{ x: values[0] as PosX, y: values[1] as PosY }, size : Size { width: values[2], height: values[3] } } ); }
-                "l" => { surface.draw_line(Point{ x: values[0] as PosX, y: values[1] as PosY }, Point{ x: values[2] as PosX, y: values[3] as PosY }, values[4] as u8); },                
-                "C" => { surface.palette[0] = core::cmp::min(values[0], u8::MAX as u16) as u8; surface.palette[1] = core::cmp::min(values[1], u8::MAX as u16) as u8; }
+                "l" => { surface.draw_line(Point{ x: values[0] as PosX, y: values[1] as PosY }, Point{ x: values[2] as PosX, y: values[3] as PosY }, values[4] as ColorType); },                
+                "C" => { surface.palette[0] = core::cmp::min(values[0], u8::MAX as u16) as ColorType; surface.palette[1] = core::cmp::min(values[1], u8::MAX as u16) as ColorType; }
                 "init" => { surface.clear(0); surface.media.clear(); }                                
                 #[cfg(feature = "inspect")]
                 "inspect" => { return (true, surface.media.inspect(255, res)); }

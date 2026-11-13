@@ -52,7 +52,7 @@ impl DOM {
                 10 => PageInstruction::NodeColor,
                 11 => PageInstruction::NodeBorder,
                 12 => PageInstruction::NodeFont,
-                13 => PageInstruction::NodeFrame,
+                13 => PageInstruction::NodeFrame,                
                 _ => { err = Ret::InvalidDOMInstruction; log::error!("invalid dom instruction {}:{:02x}", position, bin[position]); continue; }
             });
             if skip > 0 && !matches!(instruction, PageInstruction::DOM) {
@@ -173,14 +173,26 @@ impl DOM {
                     dom.set_padding(n_i, values);                     
                     log::trace!("{position:4}| ({depth}:{n_i}) padding: {:?}", values);
                 },
-                PageInstruction::NodeBackground => {                    
-                    dom.request_style(n_i).set_background(value); 
-                    log::trace!("{position:4}| ({depth}:{n_i}) background: {}", value);
-                },
-                PageInstruction::NodeColor => {                    
-                    dom.request_style(n_i).set_color(value); 
-                    log::trace!("{position:4}| ({depth}:{n_i}) color: {}", value);
-                },
+                PageInstruction::NodeColor | PageInstruction::NodeBackground => {                   
+                    let color;
+                    if value == 0xf {                        
+                        color = Color::from_rgb(reader.read_u8(), reader.read_u8(), reader.read_u8());
+                        reader.read_u8();                     
+                    }else{                        
+                        color = value as ColorType;
+                    }
+                    match instruction {
+                        PageInstruction::NodeColor => {
+                            dom.request_style(n_i).set_color(color);
+                            log::trace!("{position:4}| ({depth}:{n_i}) color: {}", value);
+                        }
+                        PageInstruction::NodeBackground => {
+                            dom.request_style(n_i).set_background(color);
+                            log::trace!("{position:4}| ({depth}:{n_i}) background: {}", value);
+                        }
+                        _ => {}
+                    }                                                           
+                },                
                 PageInstruction::NodeBorder | PageInstruction::NodeFrame => {                    
                     let framing = match instruction { PageInstruction::NodeBorder => true, _ => false };
                     node.set_framing(framing);
@@ -357,11 +369,11 @@ impl DOM {
                             dom.set_padding(n_i, control::decode_values(value));
                         }                        
                         "background"=>{
-                            let value: u8 = value.parse().unwrap_or_else(|e| { log::error!("{}", e); return 0; } );                            
+                            let value: ColorType = Color::parse(value).unwrap_or_else(|e| { log::error!("{}", e); return 0; } );                            
                             dom.request_style(n_i).set_background(value);
                         }
                         "color"=>{
-                            let value: u8 = value.parse().unwrap_or_else(|e| { log::error!("{}", e); return 1; } );                                                        
+                            let value: ColorType = Color::parse(value).unwrap_or_else(|e| { log::error!("{}", e); return 1; } );                                                        
                             dom.request_style(n_i).set_color(value);
                         }
                         "border" | "frame"=>{        
@@ -497,7 +509,7 @@ impl DOM {
                 if style.color != 1 {
                     xml.write_fmt(format_args!(" color={}", style.color)).expect("");
                 }
-                if style.background != Color::MAX {
+                if style.background != Color::TRANSPARENT {
                     xml.write_fmt(format_args!(" background={}", style.background)).expect("");
                 }
                 if node.visibility() == Visibility::Hidden {

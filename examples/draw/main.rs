@@ -58,7 +58,7 @@ impl Example {
         let fps_area = Area { point: Point { x: 0, y: 0 }, size: fps_size };
         surface.fill_rect(fps_area, 0x101010);                
         surface.draw_rect(Area { point: fps_area.point, size : fps_area.size - Size { width: 1, height: 1 } }, 0x404040);                
-        surface.palette[1] = 0xffffff;
+        surface.palette[1] = Color::COLORS[1];
         surface.draw_text(Identifier::Index(0), &fps_text, Point { x: 2, y: 2 });
 
     }
