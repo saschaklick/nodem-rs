@@ -55,6 +55,8 @@ pub enum ContentContainer<'a> {
     Raw { raw: *const u8, len: usize },
     Str(&'a str)
 }
+
+#[cfg(feature = "alloc")]
 struct DOMContainer {
     raw: *mut u8,
     len: usize    
@@ -376,10 +378,21 @@ impl DOM {
                 4, 2, 2, 2, WIDTH_CONTENT, HEIGHT_CONTENT,
                 Offset::MAX, Offset::MAX, Offset::MAX, Offset::MAX,
                 Offset::MAX, Offset::MAX, Offset::MAX, Offset::MAX,
-                Color::MAX, Color::MAX, BORDER_MAX, FONT_MAX,
+                Color::TRANSPARENT, Color::TRANSPARENT, BORDER_MAX, FONT_MAX,
                 PosX::MAX, PosY::MAX, SizeW::MAX, SizeH::MAX
         )).expect("");
         for n_i in 0..NODE_MAX as usize {
+            if n_i > 0 {
+                let mut in_tree = false;
+                for n_ii in 0..NODE_MAX as usize {
+                    let node = self.nodes[n_ii];        
+                    if node.first_child == n_i as NodeIdx || node.next_sibling == n_i as NodeIdx {
+                        in_tree = true;
+                        break;
+                    }
+                }
+                if !in_tree { continue; }
+            }
             let node = self.nodes[n_i];
             let padding = self.paddings[node.plot.padding_idx as usize];
             let margin = self.margins[node.plot.margin_idx as usize];
