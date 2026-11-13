@@ -112,22 +112,22 @@ impl DOM {
                 if parent.plot.size.width >= WIDTH_MAX || parent.plot.size.height >= HEIGHT_MAX {
                     let mut size_p = Size { width: 0, height: 0 };
                     
-                    size_p.width = size_p.width.checked_add(mar_p.e as SizeW + mar_p.w as SizeW + pad_p.e as SizeW + pad_p.w as SizeW).unwrap_or(SizeW::MAX);
-                    size_p.height = size_p.height.checked_add(mar_p.n as SizeH + mar_p.s as SizeH + pad_p.n as SizeH + pad_p.s as SizeH).unwrap_or(SizeH::MAX);
+                    size_p.width = size_p.width.saturating_add(mar_p.e as SizeW + mar_p.w as SizeW + pad_p.e as SizeW + pad_p.w as SizeW);
+                    size_p.height = size_p.height.saturating_add(mar_p.n as SizeH + mar_p.s as SizeH + pad_p.n as SizeH + pad_p.s as SizeH);
                     let res_s = &mut res_p.0.size;
                     if dir_p == Direction::Vertical {                    
                         if parent.plot.size.width >= WIDTH_MAX {                        
-                            res_s.width = core::cmp::max(res_s.width, size_p.width.checked_add(res_n.0.size.width).unwrap_or(SizeW::MAX));
+                            res_s.width = core::cmp::max(res_s.width, size_p.width.saturating_add(res_n.0.size.width));
                         }
                         if parent.plot.size.height >= HEIGHT_MAX {                        
-                            res_s.height = res_s.height.checked_add(res_n.0.size.height).unwrap_or(SizeH::MAX);                    
+                            res_s.height = res_s.height.saturating_add(res_n.0.size.height);
                         }
                     }else{
                         if parent.plot.size.width >= WIDTH_MAX {                        
-                            res_s.width = res_s.width.checked_add(res_n.0.size.width).unwrap_or(SizeW::MAX);
+                            res_s.width = res_s.width.saturating_add(res_n.0.size.width);                            
                         }
                         if parent.plot.size.height >= HEIGHT_MAX {                        
-                            res_s.height = core::cmp::max(res_s.height, size_p.height.checked_add(res_n.0.size.height).unwrap_or(SizeH::MAX));
+                            res_s.height = core::cmp::max(res_s.height, size_p.height.saturating_add(res_n.0.size.height));
                         }
                     }
                 }            
@@ -177,11 +177,11 @@ impl DOM {
                     
                     if dir_p == Direction::Horizontal {
                         if node.alignment() == Alignment::Stretch {
-                            res_n.0.size.height = res_p.0.size.height.checked_sub(mar_p.n as SizeH + mar_p.s as SizeH + pad_p.n as SizeH + pad_p.s as SizeH).unwrap_or(SizeH::MIN);
+                            res_n.0.size.height = res_p.0.size.height.saturating_sub(mar_p.n as SizeH + mar_p.s as SizeH + pad_p.n as SizeH + pad_p.s as SizeH);
                         }else
                         if node.alignment() == Alignment::Center || node.alignment() == Alignment::End {
-                            let mut space = res_p.0.size.height.checked_sub(res_n.0.size.height).unwrap_or(0);                
-                            space = space.checked_sub(pad_p.n as SizeH + pad_p.s as SizeH + mar_p.n as SizeH + mar_p.s as SizeH).unwrap_or(SizeH::MIN);                
+                            let mut space = res_p.0.size.height.saturating_sub(res_n.0.size.height);                
+                            space = space.saturating_sub(pad_p.n as SizeH + pad_p.s as SizeH + mar_p.n as SizeH + mar_p.s as SizeH);                
                             if node.alignment() == Alignment::Center {
                                 space = space / 2;
                             }                                             
@@ -189,11 +189,11 @@ impl DOM {
                         }                
                     }else{
                         if node.alignment() == Alignment::Stretch {
-                            res_n.0.size.width = res_p.0.size.width.checked_sub(mar_p.e as SizeW + mar_p.w as SizeW + pad_p.e as SizeW + pad_p.w as SizeW).unwrap_or(SizeW::MIN);
+                            res_n.0.size.width = res_p.0.size.width.saturating_sub(mar_p.e as SizeW + mar_p.w as SizeW + pad_p.e as SizeW + pad_p.w as SizeW);
                         }else
                         if node.alignment() == Alignment::Center || node.alignment() == Alignment::End {
-                            let mut space = res_p.0.size.width.checked_sub(res_n.0.size.width).unwrap_or(0);                
-                            space = space.checked_sub(pad_p.e as SizeW + pad_p.w as SizeW + mar_p.e as SizeW + mar_p.w as SizeW).unwrap_or(SizeW::MIN);                
+                            let mut space = res_p.0.size.width.saturating_sub(res_n.0.size.width);                
+                            space = space.saturating_sub(pad_p.e as SizeW + pad_p.w as SizeW + mar_p.e as SizeW + mar_p.w as SizeW);                
                             if node.alignment() == Alignment::Center {
                                 space = space / 2;
                             }                                             
@@ -216,7 +216,7 @@ impl DOM {
                         let child = self.nodes[c_i as usize];
                         let mar_c = self.margins[child.plot.margin_idx as usize];
                         let res_c = &mut result.areas[c_i as usize];
-                        let res_s = &mut res_c.0.size;
+                        let res_s = &mut res_c.0.size;                        
                         let flex_w_c = child.plot.size.width > WIDTH_MAX && child.plot.size.width <= WIDTH_FLEX;
                         let flex_h_c = child.plot.size.height > HEIGHT_MAX && child.plot.size.height <= HEIGHT_FLEX;
                         if dir_n == Direction::Horizontal {
@@ -257,12 +257,12 @@ impl DOM {
                             res_n.0.size.width.saturating_sub(pad_n.w as SizeW + pad_n.e as SizeW + mar_n.w as SizeW + mar_n.e as SizeW) as u16
                         } else {
                             res_n.0.size.height.saturating_sub(pad_n.n as SizeH + pad_n.s as SizeH + mar_n.n as SizeH + mar_n.s as SizeH) as u16
-                        };
+                        };                        
                         flex_size = flex_size.saturating_sub(fixed_size).saturating_sub(flex_margin as u16);
                         let flex_step = flex_size.saturating_div(flex_cnt);
-                        let mut flex_remain = flex_size - (flex_step * flex_cnt);                    
+                        //let mut flex_remain = flex_size - (flex_step * flex_cnt);                    
                         //log::info!("#{:02} flex: {} {} {}", n_i, flex_cnt, flex_size, flex_step);
-                        loop {
+                        loop {                            
                             let child = self.nodes[c_i as usize];
                             let mar_c = self.margins[child.plot.margin_idx as usize];
                             let res_c = &mut result.areas[c_i as usize];
@@ -270,16 +270,18 @@ impl DOM {
                             if dir_n == Direction::Horizontal {
                                 let flex_w_c = child.plot.size.width > WIDTH_MAX && child.plot.size.width <= WIDTH_FLEX;
                                 if flex_w_c {
-                                    let flex_c = (FLEX_MAX + 1) as u16 - (child.plot.size.width - WIDTH_MAX) as u16;
-                                    res_s.width = (flex_step as SizeW).saturating_mul(flex_c as SizeW).saturating_add(flex_remain).saturating_add(mar_c.e.saturating_add(mar_c.w) as SizeW);
-                                    flex_remain = flex_remain.saturating_sub(1);
+                                    let flex_c = (FLEX_MAX + 1) as u16 - (child.plot.size.width - WIDTH_MAX) as u16;                                    
+                                    res_s.width = (flex_step as SizeW).saturating_mul(flex_c as SizeW).saturating_add(mar_c.e.saturating_add(mar_c.w) as SizeW);                                    
+                                    //flex_remain = flex_remain.saturating_sub(1);
+                                    //if flex_remain > 0 { res_s.width = res_s.width.saturating_add(1); }
                                 }
                             }else{
                                 let flex_h_c = child.plot.size.height > HEIGHT_MAX && child.plot.size.height <= HEIGHT_FLEX;
                                 if flex_h_c {
                                     let flex_c = (FLEX_MAX + 1) as u16 - (child.plot.size.height - HEIGHT_MAX) as u16;
-                                    res_s.height = (flex_step as SizeH).saturating_mul(flex_c as SizeH).saturating_add(flex_remain).saturating_add(mar_c.n.saturating_add(mar_c.s) as SizeH);
-                                    flex_remain = flex_remain.saturating_sub(1);
+                                    res_s.height = (flex_step as SizeH).saturating_mul(flex_c as SizeH).saturating_add(mar_c.n.saturating_add(mar_c.s) as SizeH);                                    
+                                    //flex_remain = flex_remain.saturating_sub(1);
+                                    //if flex_remain > 0 { res_s.height = res_s.height.saturating_add(1); }
                                 }
                             }
                             if child.next_sibling != NODE_MAX {
