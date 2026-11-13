@@ -40,7 +40,7 @@ impl SoftInterrupt for IntSurface <'_> {
                 match op {
                     2 => self.surface.draw_rect(area, value as ColorType),
                     3 => self.surface.fill_rect(area, value as ColorType),                    
-                    _ => self.surface.draw_border(value as BorderIdx, area)
+                    _ => self.surface.draw_border(value as BorderIdx, area, None)
                 }
             }
             4 => {

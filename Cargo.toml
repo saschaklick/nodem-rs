@@ -7,6 +7,9 @@ repository = "https://github.com/saschaklick/nodem-rs"
 description = "Rust implementation of the nodem UI rendering framework"
 license = "MIT"
 
+[lints.rust]
+unexpected_cfgs = { level = "allow", check-cfg = ['cfg(nodem_mode)'] }
+
 [features]
 std = ["bytes", "virtmach/std"]
 inspect = []
@@ -22,11 +25,6 @@ ui = []
 term = []
 base = ["dom", "xml", "ninepatch", "inspect"]
 demo = []
-
-index1 = []
-rgb332 = []
-rgb565 = []
-rgb24 = []
 
 [dependencies]
 log = "0.4.27"

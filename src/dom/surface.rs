@@ -124,8 +124,8 @@ impl Surface {
                         }
                     }                     
                                         
-                    if !hidden {
-                        self.draw_border(style.border_idx, Area{ point: p, size: s });                    
+                    if !hidden {                        
+                        self.draw_border(style.border_idx, Area{ point: p, size: s }, Some(&[style.background, style.color]));               
                     }
                     
                     if node.first_child == NODE_MAX {

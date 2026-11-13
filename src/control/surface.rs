@@ -28,7 +28,7 @@ impl IControl for Surface {
                 "t" => { surface.draw_text(Identifier::Index(values[2] as u8), text, Point { x: values[0] as PosX, y: values[1] as PosY }); }
                 "T" => { let size = surface.get_text_size(Identifier::Index(values[0] as u8), text); return (true, res.write_fmt(format_args!("{},{}", size.width, size.height))); }
                 "i" => { surface.draw_image(Identifier::Both(values[2] as u8, text), Point { x: values[0] as PosX, y: values[1] as PosY }, None); }
-                "b" => { surface.draw_border(values[4] as u8, Area { point: Point{ x: values[0] as PosX, y: values[1] as PosY }, size : Size { width: values[2], height: values[3] } } ); }
+                "b" => { surface.draw_border(values[4] as u8, Area { point: Point{ x: values[0] as PosX, y: values[1] as PosY }, size : Size { width: values[2], height: values[3] } }, None); }
                 "l" => { surface.draw_line(Point{ x: values[0] as PosX, y: values[1] as PosY }, Point{ x: values[2] as PosX, y: values[3] as PosY }, values[4] as ColorType); },                
                 "C" => { surface.palette[0] = core::cmp::min(values[0], u8::MAX as u16) as ColorType; surface.palette[1] = core::cmp::min(values[1], u8::MAX as u16) as ColorType; }
                 "init" => { surface.clear(0); surface.media.clear(); }                                

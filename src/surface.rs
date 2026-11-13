@@ -56,10 +56,6 @@ impl Surface {
         self.fill_rect(Area { point: Point { x: 0, y: 0 }, size: Size { width: self.width, height: self.height } }, color);
     }
 
-    pub fn get_color(&self, index: usize) -> ColorType {
-        return self.palette[cmp::min(self.palette.len() - 1, index)];
-    }
-
     pub fn set_clip(&mut self, p_0: Point, p_1: Point) {
         self.clip.p0 = p_0;
         self.clip.p1 = p_1;
@@ -160,46 +156,49 @@ impl Surface {
 }
 
 impl Surface {
-    #[cfg(feature = "index1")]
-    fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {           
-        let pixel_i = p.y as usize * self.width as usize + p.x as usize;        
-        let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };
-        if pixel_i / 8 < framebuffer.len() {
-            if color == 0 {                        
-                { framebuffer[pixel_i / 8] &= !(1 << (7 - (pixel_i % 8))); }                
-            }else{                
-                { framebuffer[pixel_i / 8] |= 1 << (7 - (pixel_i % 8)); }                
+    cfg_select! {
+        nodem_mode = "rgb332" => {
+            fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {           
+                let pixel_i = p.y as usize * self.width as usize + p.x as usize;
+                let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };
+                if pixel_i < framebuffer.len() {                                    
+                    framebuffer[pixel_i] = color;            
+                }
             }
         }
-    }
-
-    #[cfg(feature = "rgb332")]
-    fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {           
-        let pixel_i = p.y as usize * self.width as usize + p.x as usize;
-        let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };
-        if pixel_i < framebuffer.len() {                                    
-            framebuffer[pixel_i] = color;            
+        nodem_mode = "rgb565" => {
+            fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {           
+                let pixel_i = (p.y as usize * self.width as usize + p.x as usize) * 2;
+                let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };
+                if pixel_i < framebuffer.len() {                                    
+                    framebuffer[pixel_i + 0] = (color >> 0) as u8;            
+                    framebuffer[pixel_i + 1] = (color >> 8) as u8;            
+                }
+            }
+        }    
+        any(nodem_mode = "rgb666", nodem_mode = "rgb24") => {
+            fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {           
+                let pixel_i = (p.y as usize * self.width as usize + p.x as usize) * 3;
+                let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };
+                if pixel_i + 2 < framebuffer.len() {                                    
+                    framebuffer[pixel_i + 0] = (color >> 0) as u8;
+                    framebuffer[pixel_i + 1] = (color >> 8) as u8;
+                    framebuffer[pixel_i + 2] = (color >> 16) as u8;
+                }
+            }
         }
-    }
-
-    #[cfg(feature = "rgb565")]
-    fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {           
-        let pixel_i = (p.y as usize * self.width as usize + p.x as usize) * 2;
-        let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };
-        if pixel_i < framebuffer.len() {                                    
-            framebuffer[pixel_i + 0] = (color >> 0) as u8;            
-            framebuffer[pixel_i + 1] = (color >> 8) as u8;            
-        }
-    }
-
-    #[cfg(feature = "rgb24")]
-    fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {           
-        let pixel_i = (p.y as usize * self.width as usize + p.x as usize) * 3;
-        let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };
-        if pixel_i + 2 < framebuffer.len() {                                    
-            framebuffer[pixel_i + 0] = (color >> 0) as u8;
-            framebuffer[pixel_i + 1] = (color >> 8) as u8;
-            framebuffer[pixel_i + 2] = (color >> 16) as u8;
-        }
+        _ => {        
+            fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {           
+                let pixel_i = p.y as usize * self.width as usize + p.x as usize;        
+                let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };
+                if pixel_i / 8 < framebuffer.len() {
+                    if color == 0 {                        
+                        { framebuffer[pixel_i / 8] &= !(1 << (7 - (pixel_i % 8))); }                
+                    }else{                
+                        { framebuffer[pixel_i / 8] |= 1 << (7 - (pixel_i % 8)); }                
+                    }
+                }
+            }
+        } 
     }
 }

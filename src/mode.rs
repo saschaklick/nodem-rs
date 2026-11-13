@@ -2,25 +2,14 @@ pub enum ColorMode {
     Index1,
     Rgb332,
     Rgb565,
+    Rgb666,
     Rgb24
 }
 
 pub struct Color {}
 
 cfg_select! {
-    feature = "index1" => {
-        pub use u8 as ColorType;        
-        impl Color {
-            pub const MODE: ColorMode = ColorMode::Index1;
-            pub const BITS_PER_PIXEL: usize = 1;
-            pub const COLORS: [ColorType;2] = [0b0, 0b1];
-            pub const TRANSPARENT: ColorType = 0b11111111; 
-            pub fn invert(color: ColorType) -> ColorType { return if color > 0 { 0b0 } else { 0b1 }; }            
-            pub fn from_rgb(r: u8, g: u8, b: u8) -> ColorType { return if ((r >> 2) + (g >> 2) + (b >> 2)) > 16 { 0b1 } else { 0b0 }; }
-            pub fn to_rgb(color: ColorType) -> [u8;3] { return if color == 0 { [ 0x00, 0x00, 0x00 ] } else { [ 0xff, 0xff, 0xff ] }; }
-        }        
-    }
-    feature = "rgb332" => {
+    nodem_mode = "rgb332" => {
         pub use u8 as ColorType;        
         impl Color {
             pub const MODE: ColorMode = ColorMode::Rgb332;
@@ -32,7 +21,7 @@ cfg_select! {
             pub fn to_rgb(color: ColorType) -> [u8;3] { return [(color & 0b00_000_111) << 5, (color & 0b00_111_000) << 3, color & 0b11_00_000]; }
         }        
     }
-    feature = "rgb565" => {
+    nodem_mode = "rgb565" => {
         pub use u16 as ColorType;        
         impl Color {
             pub const MODE: ColorMode = ColorMode::Rgb565;
@@ -44,7 +33,19 @@ cfg_select! {
             pub fn to_rgb(color: ColorType) -> [u8;3] { return [((color & 0b00000_000000_11111) << 3) as u8, ((color & 0b00000_111111_00000) >> 3) as u8, ((color & 0b11111_000000_00000) >> 8) as u8]; }            
         }                
     }
-    feature = "rgb24" => {        
+    nodem_mode = "rgb666" => {        
+        pub use u32 as ColorType;        
+        impl Color {
+            pub const MODE: ColorMode = ColorMode::Rgb666;
+            pub const BITS_PER_PIXEL: usize = 24;
+            pub const COLORS: [ColorType;2] = [0b00000000_00000000_00000000, 0b00111111_00111111_00111111];        
+            pub const TRANSPARENT: ColorType = 0b10000000_00000000_00000000;        
+            pub fn invert(color: ColorType) -> ColorType { return color ^ 0b00111111_00111111_00111111; }            
+            pub fn from_rgb(r: u8, g: u8, b: u8) -> ColorType { return (r as u32) >> 2 | (g as u32 >> 2) << 8 | (b as u32 >> 2) << 16 }
+            pub fn to_rgb(color: ColorType) -> [u8;3] { return [(color >> 2) as u8 & 0x3f, (color >> 8) as u8 & 0x3f, (color >> 16) as u8 & 0x3f]; }
+        }
+    }
+    nodem_mode = "rgb24" => {        
         pub use u32 as ColorType;        
         impl Color {
             pub const MODE: ColorMode = ColorMode::Rgb24;
@@ -57,7 +58,16 @@ cfg_select! {
         }
     }
     _ => {
-        compile_error!("Select a color mode by setting one of the following features: index1, rgb332, rgb565, rgb888");
+        pub use u8 as ColorType;        
+        impl Color {
+            pub const MODE: ColorMode = ColorMode::Index1;
+            pub const BITS_PER_PIXEL: usize = 1;
+            pub const COLORS: [ColorType;2] = [0b0, 0b1];
+            pub const TRANSPARENT: ColorType = 0b11111111; 
+            pub fn invert(color: ColorType) -> ColorType { return if color > 0 { 0b0 } else { 0b1 }; }            
+            pub fn from_rgb(r: u8, g: u8, b: u8) -> ColorType { return if ((r >> 2) + (g >> 2) + (b >> 2)) > 16 { 0b1 } else { 0b0 }; }
+            pub fn to_rgb(color: ColorType) -> [u8;3] { return if color == 0 { [ 0x00, 0x00, 0x00 ] } else { [ 0xff, 0xff, 0xff ] }; }
+        }        
     }
 }
 

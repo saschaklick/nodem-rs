@@ -8,7 +8,7 @@
 			"args": [
 				"--example",
 				"construct",
-				"--features=index1,term,dom,ninepatch"
+				"--features=term,dom,ninepatch"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
@@ -25,7 +25,7 @@
 			"args": [
 				"--example",
 				"parse",
-				"--features=index1,term,dom,xml,alloc"
+				"--features=term,dom,xml,ninepatch,alloc"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
@@ -42,11 +42,12 @@
 			"args": [
 				"--example",
 				"construct",
-				"--features=rgb24,ui,dom,ninepatch"
+				"--features=ui,dom,ninepatch"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
-				"NODEM_ARCH": "EXAMPLE"
+				"NODEM_ARCH": "EXAMPLE",
+				"RUSTFLAGS":"--cfg nodem_mode=\"rgb24\""
 			},
 			"problemMatcher": [
 				"$rustc"
@@ -59,11 +60,12 @@
 			"args": [
 				"--example",
 				"parse",
-				"--features=rgb565,ui,dom,xml,alloc,inspect"
+				"--features=ui,dom,xml,ninepatch,alloc,inspect",								
 			],
-			"env": {
+			"env": {				
 				"RUST_BACKTRACE": "1",
-				"NODEM_ARCH": "EXAMPLE"				
+				"NODEM_ARCH": "EXAMPLE",
+				"RUSTFLAGS":"--cfg nodem_mode=\"rgb24\""
 			},
 			"problemMatcher": [
 				"$rustc"
@@ -76,11 +78,12 @@
 			"args": [
 				"--example",
 				"empty",
-				"--features=rgb24,ui"
+				"--features=ui"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
-				"NODEM_ARCH": "EXAMPLE"
+				"NODEM_ARCH": "EXAMPLE",
+				"RUSTFLAGS":"--cfg nodem_mode=\"rgb24\""
 			},
 			"problemMatcher": [
 				"$rustc"
@@ -93,11 +96,12 @@
 			"args": [
 				"--example",
 				"draw",
-				"--features=rgb24,ui"
+				"--features=ui"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
-				"NODEM_ARCH": "EXAMPLE"
+				"NODEM_ARCH": "EXAMPLE",
+				"RUSTFLAGS":"--cfg nodem_mode=\"rgb24\""
 			},
 			"problemMatcher": [
 				"$rustc"
@@ -110,7 +114,7 @@
 			"args": [
 				"--example",
 				"vm",
-				"--features=index1,ui,dom,vm,compile,basic,alloc"
+				"--features=ui,dom,vm,compile,basic,alloc"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
@@ -126,7 +130,7 @@
 			"command": "test",
 			"args": [
 				"--lib",
-				"--features=index1,std,xml,dom,ninepatch,vm,inspect,alloc",
+				"--features=std,xml,dom,ninepatch,vm,inspect,alloc",
 				"--",
 				"tests",
 				"--nocapture",

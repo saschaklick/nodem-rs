@@ -44,23 +44,24 @@ impl Default for NinePatch<'_> {
 }
 
 impl Surface {
-   pub fn draw_border(&self, border_idx: BorderIdx, target: Area) {
+   pub fn draw_border(&self, border_idx: BorderIdx, target: Area, colors: Option<&[ColorType]>) {
+      let colors = colors.unwrap_or(&self.palette);
       #[cfg(not(feature = "ninepatch"))]
       if border_idx != BORDER_MAX {
-         self.draw_rect(target, self.get_color(1));
+         self.draw_rect(target, colors[1]);
       }
       
       #[cfg(feature = "ninepatch")]
       if border_idx == BORDER_RECT {
-         self.draw_rect(target, self.get_color(1));
+         self.draw_rect(target, colors[1]);
       }else
       if border_idx < BORDER_RECT {
-         self.draw_ninepatch(Identifier::Index(border_idx), target);
+         self.draw_ninepatch(Identifier::Index(border_idx), target, colors);
       }
    }
    
    #[cfg(feature = "ninepatch")]
-   pub fn draw_ninepatch(&self, ident: Identifier, target: Area) {
+   pub fn draw_ninepatch(&self, ident: Identifier, target: Area, colors: &[ColorType]) {
       let ninepatch = self.media.get_border(ident);
 
       let nw_outer = target.point;
@@ -85,13 +86,13 @@ impl Surface {
             pos.y = nw_outer.y;         
             for _p_y in 0 .. ninepatch.n_h {
                let pixel = reader_n.read_bit();
-               self.draw_pixel(pos, self.get_color(pixel as usize));
+               self.draw_pixel(pos, colors[pixel as usize]);
                pos.y = pos.y.saturating_add(1);            
             }
             pos.y = se_outer.y - 1;
             for _p_y in 0 .. ninepatch.s_h {
                let pixel = reader_s.read_bit();
-               self.draw_pixel(pos, self.get_color(pixel as usize));
+               self.draw_pixel(pos, colors[pixel as usize]);
                pos.y = pos.y.saturating_sub(1);            
             }
             if p_x % ninepatch.x_w as PosX == (ninepatch.x_w as PosX).saturating_sub(1) {
@@ -110,13 +111,13 @@ impl Surface {
             pos.x = nw_outer.x;
             for _p_x in 0 .. ninepatch.w_w {
                let pixel = reader_w.read_bit();
-               self.draw_pixel(pos, self.get_color(pixel as usize));
+               self.draw_pixel(pos, colors[pixel as usize]);
                pos.x = pos.x.saturating_add(1);            
             }
             pos.x = se_outer.x - 1;
             for _p_x in 0 .. ninepatch.e_w {
                let pixel = reader_e.read_bit();
-               self.draw_pixel(pos, self.get_color(pixel as usize));
+               self.draw_pixel(pos, colors[pixel as usize]);
                pos.x = pos.x.saturating_sub(1);            
             }
             if p_y % ninepatch.y_h as PosX == (ninepatch.y_h as PosX).saturating_sub(1) {
@@ -146,7 +147,7 @@ impl Surface {
             pos.x = edge.point.x;
             for _p_x in 0 .. edge.width {
                let pixel = reader.read_bit();
-               self.draw_pixel(pos, self.get_color(pixel as usize));
+               self.draw_pixel(pos, colors[pixel as usize]);
                pos.x = if (i & 1) == 0 { pos.x.saturating_add(1) } else { pos.x.saturating_sub(1) };
             }
             pos.y = if (i & 2) == 0 { pos.y.saturating_add(1) } else { pos.y.saturating_sub(1) };

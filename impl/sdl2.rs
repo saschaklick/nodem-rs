@@ -17,8 +17,6 @@ use tokio::{ net::TcpListener, io::AsyncWriteExt };
 static SCALE: u32          = 5;
 static WINDOW_PADDING: u32 = 64;
 
-const SDL_COLORS: [Color;2] = [Color::RGB(32, 32, 32), Color::RGB(196, 196, 196)];
-
 pub struct Example {    
     #[allow(dead_code)]
     #[cfg(feature = "dom")]
@@ -155,23 +153,26 @@ impl SDL2Window {
             let mut window_surface = window.surface(&event_pump).unwrap();      
 
             let mut surface: Surface;
-            #[cfg(feature = "index1")]
-            {                
-                let palette: Palette = Palette::with_colors(&SDL_COLORS).unwrap();
-                surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 / 8, PixelFormatEnum::Index1MSB).unwrap();
-                surface.set_palette(&palette).ok();
-            }
-            #[cfg(feature = "rgb332")]
-            {                                
-                surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 * 1, PixelFormatEnum::RGB332).unwrap();                            
-            }
-            #[cfg(feature = "rgb565")]
-            {                                
-                surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 * 2, PixelFormatEnum::RGB565).unwrap();                            
-            }
-            #[cfg(feature = "rgb24")]
-            {                                
-                surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 * 3, PixelFormatEnum::RGB24).unwrap();                            
+            cfg_select! {            
+                nodem_mode = "rgb332" => {            
+                    surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 * 1, PixelFormatEnum::RGB332).unwrap();                            
+                }
+                nodem_mode = "rgb565" => {                         
+                    surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 * 2, PixelFormatEnum::RGB565).unwrap();                            
+                }
+                nodem_mode = "rgb666" => {                                
+                    pixels = pixels.map(|pixel| { pixel << 2 });
+                    surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 * 3, PixelFormatEnum::RGB24).unwrap();                            
+                }
+                nodem_mode = "rgb24" => {                                
+                    surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 * 3, PixelFormatEnum::RGB24).unwrap();                            
+                }
+                _ => {                
+                    const SDL_COLORS: [Color;2] = [Color::RGB(32, 32, 32), Color::RGB(196, 196, 196)];
+                    let palette: Palette = Palette::with_colors(&SDL_COLORS).unwrap();
+                    surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 / 8, PixelFormatEnum::Index1MSB).unwrap();
+                    surface.set_palette(&palette).ok();
+                }
             }
 
             let r1 = Rect::new(0,0, surface.width(), surface.height() );
