@@ -1,6 +1,5 @@
 use crate::surface::*;
 use crate::stream::*;
-use crate::media::image::*;
 use crate::media::font::*;
 
 fn apply_drawing(drawing: &mut media::image::Settings, option:u8) {
@@ -82,7 +81,7 @@ impl Surface {
                             "col" | "bg" => {
                                 let color_n = if name == "col" { 1 } else { 0 };
                                 instruction[0] = crate::surface::COLOR as u8;
-                                let _ = Color::parse(value_str.unwrap_or("-").trim()).inspect(|value| {                                    
+                                let _ = Color::parse(value_str.unwrap_or("-").trim(), &Color::COLORS).inspect(|value| {                                    
                                     colors[color_n] = *value;
                                 }).inspect_err(|_|{                                    
                                     colors[color_n] = self.palette[color_n];                                    
@@ -204,7 +203,7 @@ impl Surface {
                                                 y: (cursor.y as PosY).checked_add(y_offset as PosY).unwrap_or(PosY::MAX)
                                             };                            
                                                                                                                                     
-                                            Surface::render_stream(self, ImageType::Indexed1 as u8, width, height, &glyph[pos ..], position, typesetting.inverted, &[Color::TRANSPARENT, colors[1]]);
+                                            Surface::render_stream(self, width, height, &glyph[pos ..], None, position, typesetting.inverted, &[Color::TRANSPARENT, colors[1]]);
                                             //self.draw_rect(Area { point: position, size: Size { width: width as SizeW, height: height as SizeH } }, 1);                         
                                         }
                                                                     
@@ -232,7 +231,7 @@ impl Surface {
                                 Identifier::Index(image_idx)
                             };
                             let image_size = if position.is_some() {
-                                drawing.colors = colors;
+                                drawing.colors = colors;                                
                                 self.draw_image(ident, cursor, Some(drawing))                                
                             } else {
                                 self.get_image_size(ident)

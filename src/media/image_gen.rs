@@ -69,9 +69,12 @@ impl Media {
         let mut data = BytesMut::new();
         let mut mask = BytesMut::new();
 
-        data.put_u8(Encoding::Raw as u8);
+        data.put_u8(match format {
+            ImageType::RGB888 => Encoding::Rgb888Raw,
+            _ => Encoding::Index1Raw
+        } as u8);
         if alpha {
-            mask.put_u8(Encoding::Raw as u8);
+            mask.put_u8(Encoding::Index1Raw as u8);
         }        
         
         let mut data_byte: u8 = 0;        

@@ -47,8 +47,8 @@ impl IControl for DOM {
                                 }); }
                                 "visible"    => { node.set_visibility( if values[0] == 0 { node::Visibility::Hidden } else { node::Visibility::Visible }); }
                                 "font"       => { let _ = value.parse::<FontIdx>().map(|value|{ dom.request_style(node_i).set_font(value); }); }
-                                "color"      => { let _ = Color::parse(value).map(|value|{ dom.request_style(node_i).set_color(value); }); }
-                                "background" => { let _ = Color::parse(value).map(|value|{ dom.request_style(node_i).set_background(value); }); }
+                                "color"      => { let _ = Color::parse(value, &Color::COLORS).map(|value|{ dom.request_style(node_i).set_color(value); }); }
+                                "background" => { let _ = Color::parse(value, &Color::COLORS).map(|value|{ dom.request_style(node_i).set_background(value); }); }
                                 "border"     => {                                
                                     if value.eq_ignore_ascii_case("solid") {
                                         dom.request_style(node_i).set_border(BORDER_RECT);

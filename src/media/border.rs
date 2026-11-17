@@ -23,7 +23,7 @@ impl Media {
                         }                                             
                         
                         if reader.available() >= BORDERLIB_HEADER_SIZE - 1 {                                                                                                                                               
-                            let border_len= reader.read_u16() as usize;                          
+                            let border_len = reader.read_u16() as usize;                          
                             let border_pos = reader.get_pos();                                                                           
                             if reader.available() >= border_len {                                                                                                                            
                                 
@@ -36,7 +36,7 @@ impl Media {
                                     return if values[0] == 0 || values[1] == 0 || values[2] == 0 || values[3] == 0 {
                                         NinePatch::default()
                                     } else {
-                                        let mut ninepatch= NinePatch {
+                                        let mut ninepatch = NinePatch {
                                             source: lib_idx,
                                             id : id,
                                             n_h: values[0],
@@ -45,12 +45,12 @@ impl Media {
                                             w_w: values[3],
                                             x_w: values[4],
                                             y_h: values[5],
-                                            data: [&[0]; 8]                                    
+                                            data: [&[]; 8]                                            
                                         };
                                         let mut pos: usize = reader.get_pos() + 8;
                                         for i in 0 .. 8 {                                                              
                                             let data_len = reader.read_u8() as usize;                                        
-                                            ninepatch.data[i] = &data[pos..pos + data_len];
+                                            ninepatch.data[i] = &data[pos..pos + data_len];                                            
                                             pos += data_len;
                                         }                                
                                         ninepatch

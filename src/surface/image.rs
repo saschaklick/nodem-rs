@@ -15,12 +15,8 @@ impl Surface {
 
             if format == ImageType::Dummy as u8 {
                 self.draw_rect(Area { point: position, size: Size { width: width as SizeW, height: height as SizeH } }, 1);
-            }else{
-                if image.mask.is_none(){                
-                    self.render_stream(format, width, height, &image.data[IMAGE_HEADER_SIZE ..], position, drawing.inverted, &drawing.colors);
-                }else{                                        
-                    self.render_masked_stream(format, width, height, &image.data[IMAGE_HEADER_SIZE ..], &image.mask.unwrap(), position, drawing.inverted, &drawing.colors, drawing.use_mask);
-                }
+            }else{                
+                self.render_stream(width, height, &image.data[IMAGE_HEADER_SIZE ..], if drawing.use_mask && image.mask.is_some() { Some(&image.mask.unwrap()) } else { None }, position, drawing.inverted, &drawing.colors);
             }
             return Size { width: width as SizeW, height: height as SizeH }
         }else{
@@ -43,76 +39,28 @@ impl Surface {
         }
     }
 
-    pub fn render_stream(&self, _format: ImageFormat, width: ImageW, height: ImageH, data: &[u8], position: Point, inverted: bool, colors: &[ColorType]) {
+    pub fn render_stream(&self, width: ImageW, height: ImageH, image_data: &[u8], mask_data: Option<&[u8]>, position: Point, inverted: bool, colors: &[ColorType]) {
         let mut p = position;
-        let mut r_i = 0;    
-
-        let mut reader: BinaryStream<'_> = BinaryStream::new(data);    
-        for _p_i in 0 .. width as usize * height as usize {
-            let pixel = reader.read_bit();
-            if reader.ok == false {
-                break;
-            }
-            
-            if pixel == 1 {            
-                let mut color = if (pixel as usize) < colors.len() { colors[pixel as usize] } else { Color::TRANSPARENT };
-                if inverted == true {
-                    color = Color::invert(color);
-                }                              
-                if colors[0] != color {                                                            
-                    self.draw_pixel(p, color);
-                }        
-            }
-
-            r_i += 1;
-            if r_i == width {
-                r_i = 0;
-                p.x = position.x;
-                if p.y >= self.height as PosY {
-                    break;
-                }
-                p.y += 1;
-            }else{
-                p.x += 1;
-            }
-        }
-    }
-
-    pub fn render_masked_stream(&self, format: ImageFormat, width: ImageW, height: ImageH, image_data: &[u8], mask_data: &[u8], position: Point, inverted: bool, colors: &[ColorType], use_mask: bool) {
-        let mut p = position;
-        let mut r_i = 0;    
+        let mut r_i = 0;            
         
-        let mut image_reader = Stream::new(&image_data[1..]);
-        let mut image_reader_bit = BinaryStream::new(image_data);        
-        let mut mask_reader = BinaryStream::new(&mask_data);        
+        let mut pixel_reader = PixelStream::new(image_data, &colors);        
+        let mut mask_reader = BitStream::new(&mask_data.unwrap_or(&[0u8;0]));        
 
+        let mut masked = 1;
         for _p_i in 0 .. width as usize * height as usize {            
-            let masked = mask_reader.read_bit();
-            if mask_reader.ok == false {
+            if mask_data.is_some() {
+                masked = mask_reader.read_bit();
+                if mask_reader.ok == false {
+                   break;
+                }
+            }
+            
+            let mut color = pixel_reader.next();        
+            if pixel_reader.ok == false {
                 break;
             }
             
-            let mut color: ColorType;
-            if format == ImageType::Indexed1 as ImageFormat {
-                let pixel = image_reader_bit.read_bit();        
-                if image_reader_bit.ok == false {
-                    break;
-                }
-                color = if (pixel as usize) < colors.len() { colors[pixel as usize] } else { Color::TRANSPARENT };
-            }else
-            if format == ImageType::RGB888 as ImageFormat {
-                let r = image_reader.read_u8();
-                let g = image_reader.read_u8();
-                let b = image_reader.read_u8();
-                if image_reader.ok == false {
-                    break;
-                }
-                color = Color::from_rgb(r, g, b);                
-            }else{
-                break;
-            }                                 
-
-            if !use_mask || masked == 1 {                
+            if masked == 1 && color != Color::TRANSPARENT {                
                 if inverted == true {
                     color = Color::invert(color);
                 }   
@@ -120,17 +68,29 @@ impl Surface {
             }
                                 
             r_i += 1;
-            if r_i == width {
-                r_i = 0;
-                p.x = position.x;
-                if p.y >= self.height as PosY {
-                    break;
+            if true {                
+                if r_i == width {
+                    r_i = 0;
+                    p.x = position.x;
+                    if p.y >= self.height as PosY {
+                        break;
+                    }
+                    p.y += 1;
+                }else{
+                    p.x += 1;
                 }
-                p.y += 1;
-            }else{
-                p.x += 1;
+            } else {
+                if r_i == width {
+                    r_i = 0;
+                    p.y = position.y;
+                    if p.x >= self.width as PosX {
+                        break;
+                    }
+                    p.x += 1;
+                }else{
+                    p.y += 1;
+                }
             }
-            
         }
     }
 

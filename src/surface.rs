@@ -166,7 +166,23 @@ impl Surface {
                 }
             }
         }
-        nodem_mode = "rgb565" => {
+        nodem_mode = "rgb444" => {
+            fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {           
+                let pixel_i = (p.y as usize * self.width as usize + p.x as usize) * 3;
+                let byte = pixel_i / 2;                
+                let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };                
+                if byte < framebuffer.len() {                                                        
+                    if pixel_i % 2 == 0 {
+                        framebuffer[byte + 0] = (color >> 4) as u8;
+                        framebuffer[byte + 1] = (framebuffer[byte + 1] & 0x0f) | (color << 4) as u8;
+                    }else{
+                        framebuffer[byte + 0] = (framebuffer[byte + 0] & 0xf0) | (color >> 8) as u8;
+                        framebuffer[byte + 1] = (color >> 0) as u8;                        
+                    }                    
+                }
+            }
+        }    
+        any(nodem_mode = "rgb555", nodem_mode = "rgb565") => {
             fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {           
                 let pixel_i = (p.y as usize * self.width as usize + p.x as usize) * 2;
                 let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };

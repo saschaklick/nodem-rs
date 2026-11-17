@@ -7,9 +7,9 @@ use crate::media::{ *, font::*, image::* };
 const PKG_HEADER: &str = "PKG0";
 
 impl Media {
-    fn rle_fixed_stream (source: &[u8]) -> Bytes {
+    fn index1_to_rle (source: &[u8]) -> Bytes {
         let mut res = BytesMut::new();
-        res.put_u8(Encoding::RLEFixed as u8);
+        res.put_u8(Encoding::Index1RLEFixed as u8);
         
         let mut pos = 0usize;
         let mut last = (source[0] >> 7) & 1;
@@ -61,25 +61,61 @@ impl Media {
         Bytes::from(res)
     }
     
-    fn optimize_stream (format: u8, source: &[u8], use_rle: bool) -> Bytes{                    
-        if format != ImageType::Indexed1 as u8 || source[0] != Encoding::Raw as u8 || use_rle == false{
-            let mut res_raw = BytesMut::new();
-            res_raw.put(source);
-            return Bytes::from(res_raw);
-        }        
+    fn rgb888_to_rle (source: &[u8]) -> Bytes {
+        let count = source.len() / 3;
+        let pixels = |i: usize| &source[i * 3..i * 3 + 3];
+        let mut res = BytesMut::new();
+        res.put_u8(Encoding::Rgb888RLEFixed as u8);
         
-        let res_rle = Media::rle_fixed_stream(&source[1..]);
+        let run_at = |i: usize| -> usize {
+            let mut n = 1;
+            while n < 128 && i + n < count && pixels(i + n) == pixels(i) {
+                n += 1;
+            }
+            n
+        };
 
-        log::debug!("raw: {}", source.len());
-        log::debug!("rle: {}", res_rle.len());                
-
-        if source.len() <= res_rle.len()   {
-            let mut res = BytesMut::new();
-            res.put(source);              
-            Bytes::from(res)
-        }else{
-           res_rle
+        let mut i = 0usize;
+        while i < count {
+            let run = run_at(i);
+            if run >= 2 {
+                res.put_u8(0x80 | (run - 1) as u8);
+                res.put(pixels(i));
+                i += run;
+            } else {                
+                let start = i;
+                while i < count && i - start < 128 && run_at(i) < 2 {
+                    i += 1;
+                }
+                res.put_u8((i - start - 1) as u8);
+                res.put(&source[start * 3..i * 3]);
+            }
         }
+
+        Bytes::from(res)
+    }
+    
+    fn optimize_stream (source: &[u8], use_rle: bool) -> Bytes{                      
+        if use_rle {
+            if source[0] == Encoding::Index1Raw as u8 {
+                let res_rle = Media::index1_to_rle(&source[1..]);
+                if source.len() > res_rle.len()   {              
+                    log::debug!("index1 - raw: {:5} rle: {:5} rate: {:3.1}%", source.len(), res_rle.len(), res_rle.len() as f32 / source.len() as f32 * 100.0);                    
+                    return res_rle;
+                }
+            }else
+            if source[0] == Encoding::Rgb888Raw as u8 {
+                let res_rle = Media::rgb888_to_rle(&source[1..]);                
+
+                if source.len() > res_rle.len()   {              
+                    log::info!("rgb888 - raw: {:5} rle: {:5} rate: {:3.1}%", source.len(), res_rle.len(), res_rle.len() as f32 / source.len() as f32 * 100.0);                    
+                    return res_rle;
+                }
+            }
+        }
+        let mut res = BytesMut::new();
+        res.put(source);   
+        Bytes::from(res)                            
     }
 
     pub fn generate_pkg(self: &Media, sources: u8, meta: &str, optimize: bool) -> Bytes {        
@@ -100,8 +136,8 @@ impl Media {
             if (image.source >= LIBRARY_MAX) || width == 0 || height == 0 ||  ((1u8 << image.source) & sources) == 0 {
                 continue;
             }                        
-            let data = Media::optimize_stream(format, &image_data.slice(0 ..), optimize);
-            let mask = if image.mask.is_some() { Media::optimize_stream(ImageType::Indexed1 as u8, &image.mask.unwrap(), optimize) } else { Bytes::new() };            
+            let data = Media::optimize_stream(&image_data.slice(0 ..), optimize);
+            let mask = if image.mask.is_some() { Media::optimize_stream(&image.mask.unwrap(), optimize) } else { Bytes::new() };            
             if data.len() >= u16::MAX as usize{
                 log::error!("image data #{index} too large");
                 continue;
@@ -142,7 +178,7 @@ impl Media {
                         let header = &glyph[0 .. GLYPH_HEADER_SIZE];
                         let data = &glyph[GLYPH_HEADER_SIZE .. glyph.len()];
                         glyphs.put(header.as_ref());
-                        glyphs.put(Media::optimize_stream(ImageType::Indexed1 as u8, data, true));                                                                    
+                        glyphs.put(Media::optimize_stream(data, true));                                                                    
                         dir.put_u16_ne(glyphs.len() as u16);                    
                     }
                 }                
@@ -268,5 +304,47 @@ impl Media {
         pkg_start.put_u16_ne(crc);                
 
         return pkg.into();
+    }
+}
+
+#[cfg(test)]
+mod rle_tests {
+    extern crate std;
+    use std::{vec, vec::Vec};
+    use super::*;
+
+    fn decode(rle: &[u8]) -> Vec<u8> {
+        let mut out = Vec::new();
+        let mut i = 1; // skip encoding byte
+        while i < rle.len() {
+            let h = rle[i]; i += 1;
+            let n = (h & 0x7f) as usize + 1;
+            if h & 0x80 != 0 {
+                for _ in 0..n { out.extend_from_slice(&rle[i..i + 3]); }
+                i += 3;
+            } else {
+                out.extend_from_slice(&rle[i..i + n * 3]);
+                i += n * 3;
+            }
+        }
+        out
+    }
+
+    fn check(src: Vec<u8>) {
+        let rle = Media::rgb888_to_rle(&src);
+        assert_eq!(decode(&rle), src);
+    }
+
+    #[test]
+    fn roundtrip() {
+        check(vec![]);
+        check(vec![1, 2, 3]);
+        check(vec![1, 2, 3, 4, 5, 6]);
+        check([9, 9, 9].repeat(500));
+        check([1, 2, 3, 1, 2, 3, 7, 7, 7].repeat(100));
+        let mixed: Vec<u8> = (0..3000u32).map(|i| ((i / 3 * 7919) % 5) as u8 * ((i % 3) as u8 + 1)).collect();
+        check(mixed);
+        let rle = Media::rgb888_to_rle(&[5, 5, 5].repeat(130));
+        assert_eq!(&rle[1..], &[0x80 | 127, 5, 5, 5, 0x80 | 1, 5, 5, 5]);
     }
 }

@@ -49,7 +49,7 @@ impl Example {
 
         dom.node_ref_mut(2).set_direction(Direction::Vertical);
         
-        dom.node_ref_mut(2).set_visibility(Visibility::Visible);
+        dom.node_ref_mut(2).set_visibility(Visibility::Visible);        
 
         let ascii =
         "\x03\x01 !\"#$%&'()*+,-./

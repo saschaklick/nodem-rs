@@ -65,7 +65,7 @@
 			"env": {				
 				"RUST_BACKTRACE": "1",
 				"NODEM_ARCH": "EXAMPLE",
-				"RUSTFLAGS":"--cfg nodem_mode=\"rgb24\""
+				"RUSTFLAGS":"--cfg nodem_mode=\"rgb555\""
 			},
 			"problemMatcher": [
 				"$rustc"

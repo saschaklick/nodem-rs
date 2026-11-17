@@ -30,14 +30,14 @@ impl Default for NinePatch<'_> {
          x_w: 2,
          y_h: 2,  
          data: [       
-            &[Encoding::Raw as u8, 0b01000000],
-            &[Encoding::Raw as u8, 0b10000000],
-            &[Encoding::Raw as u8, 0b10000000],
-            &[Encoding::Raw as u8, 0b10000000],
-            &[Encoding::Raw as u8, 0b10000000],
-            &[Encoding::Raw as u8, 0b10000000],
-            &[Encoding::Raw as u8, 0b01000000],
-            &[Encoding::Raw as u8, 0b10000000]
+            &[Encoding::Index1Raw as u8, 0b01000000],
+            &[Encoding::Index1Raw as u8, 0b10000000],
+            &[Encoding::Index1Raw as u8, 0b10000000],
+            &[Encoding::Index1Raw as u8, 0b10000000],
+            &[Encoding::Index1Raw as u8, 0b10000000],
+            &[Encoding::Index1Raw as u8, 0b10000000],
+            &[Encoding::Index1Raw as u8, 0b01000000],
+            &[Encoding::Index1Raw as u8, 0b10000000]
          ]
       }
    }
@@ -80,19 +80,17 @@ impl Surface {
       
       if ninepatch.x_w > 0 { // x
          let mut pos = Point { x : nw_inner.x, y: 0 };            
-         let mut reader_n = BinaryStream::new(ninepatch.data[0]);  
-         let mut reader_s = BinaryStream::new(ninepatch.data[4]);  
+         let mut reader_n = PixelStream::new(ninepatch.data[0], &colors);  
+         let mut reader_s = PixelStream::new(ninepatch.data[4], &colors);  
          for p_x in 0 .. se_inner.x.saturating_sub(nw_inner.x) {      
-            pos.y = nw_outer.y;         
-            for _p_y in 0 .. ninepatch.n_h {
-               let pixel = reader_n.read_bit();
-               self.draw_pixel(pos, colors[pixel as usize]);
+            pos.y = nw_outer.y;                     
+            for _p_y in 0 .. ninepatch.n_h {               
+               self.draw_pixel(pos, reader_n.next());
                pos.y = pos.y.saturating_add(1);            
             }
             pos.y = se_outer.y - 1;
-            for _p_y in 0 .. ninepatch.s_h {
-               let pixel = reader_s.read_bit();
-               self.draw_pixel(pos, colors[pixel as usize]);
+            for _p_y in 0 .. ninepatch.s_h {               
+               self.draw_pixel(pos, reader_s.next());
                pos.y = pos.y.saturating_sub(1);            
             }
             if p_x % ninepatch.x_w as PosX == (ninepatch.x_w as PosX).saturating_sub(1) {
@@ -105,19 +103,17 @@ impl Surface {
 
       if ninepatch.y_h > 0 { // y
          let mut pos = Point { x : 0, y: nw_inner.y };            
-         let mut reader_e = BinaryStream::new(ninepatch.data[2]);  
-         let mut reader_w = BinaryStream::new(ninepatch.data[6]);  
+         let mut reader_e = PixelStream::new(ninepatch.data[2], colors);  
+         let mut reader_w = PixelStream::new(ninepatch.data[6], colors);  
          for p_y in 0 .. se_inner.y.saturating_sub(nw_inner.y) {      
             pos.x = nw_outer.x;
-            for _p_x in 0 .. ninepatch.w_w {
-               let pixel = reader_w.read_bit();
-               self.draw_pixel(pos, colors[pixel as usize]);
+            for _p_x in 0 .. ninepatch.w_w {               
+               self.draw_pixel(pos, reader_w.next());
                pos.x = pos.x.saturating_add(1);            
             }
             pos.x = se_outer.x - 1;
-            for _p_x in 0 .. ninepatch.e_w {
-               let pixel = reader_e.read_bit();
-               self.draw_pixel(pos, colors[pixel as usize]);
+            for _p_x in 0 .. ninepatch.e_w {               
+               self.draw_pixel(pos, reader_e.next());
                pos.x = pos.x.saturating_sub(1);            
             }
             if p_y % ninepatch.y_h as PosX == (ninepatch.y_h as PosX).saturating_sub(1) {
@@ -126,7 +122,7 @@ impl Surface {
             }
             pos.y = pos.y.saturating_add(1);
          }      
-      }   
+      }  
 
       struct Edge {
          point  : Point,
@@ -142,16 +138,15 @@ impl Surface {
       ];
       for (i, edge) in edges.iter().enumerate() {         
          let mut pos = edge.point;
-         let mut reader = BinaryStream::new(ninepatch.data[edge.patch]);  
+         let mut reader = PixelStream::new(ninepatch.data[edge.patch], &colors);  
          for _p_y in 0 .. edge.height {         
             pos.x = edge.point.x;
-            for _p_x in 0 .. edge.width {
-               let pixel = reader.read_bit();
-               self.draw_pixel(pos, colors[pixel as usize]);
+            for _p_x in 0 .. edge.width {               
+               self.draw_pixel(pos, reader.next());
                pos.x = if (i & 1) == 0 { pos.x.saturating_add(1) } else { pos.x.saturating_sub(1) };
             }
             pos.y = if (i & 2) == 0 { pos.y.saturating_add(1) } else { pos.y.saturating_sub(1) };
          }      
-      }            
+      }                  
    }
 }

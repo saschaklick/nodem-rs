@@ -98,7 +98,7 @@ impl Media {
         let mut data: [Bytes;8] = [EMPTY; 8];
         for i in 0 .. 8 {
             let mut buf = BytesMut::new();
-            buf.put_u8(Encoding::Raw as u8);
+            buf.put_u8(Encoding::Index1Raw as u8);
             let mut byte = 0;
             let mut bit = 0b10000000;
             match i {

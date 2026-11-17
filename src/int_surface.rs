@@ -1,5 +1,5 @@
 use virtmach::{ *, interrupts::{ SoftInterrupt } };
-    #[cfg(feature = "compile")]
+#[cfg(feature = "compile")]
 use virtmach::{ interrupts::{ surface, SoftInterruptFunction } };
 use crate::surface::Surface;
 use crate::{ Area, Size, Point, PosX, PosY, SizeW, SizeH, ColorType, BorderIdx, media::Identifier };

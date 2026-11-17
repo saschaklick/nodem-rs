@@ -95,25 +95,36 @@ impl Control {
                         
                         match line {
                             "info" => {                                  
-                                res.write_str(concat!(env!("CARGO_PKG_NAME"), ",", env!("NODEM_ARCH"), ",", env!("CARGO_PKG_VERSION"), ",\"COPYRIGHT (c) 2026 BY ", env!("CARGO_PKG_AUTHORS"), "\"\r\n")).expect("");
+                                let _ = res.write_str(concat!(env!("CARGO_PKG_NAME"), ",", env!("NODEM_ARCH"), ",", env!("CARGO_PKG_VERSION"), ",\"COPYRIGHT (c) 2026 BY ", env!("CARGO_PKG_AUTHORS"), "\"\r\n")).expect("");
+                                let _ = res.write_str(
+                                    cfg_select! {                                        
+                                        nodem_mode = "rgb332" => "rgb332,",
+                                        nodem_mode = "rgb444" => "rgb444,",
+                                        nodem_mode = "rgb555" => "rgb555,",
+                                        nodem_mode = "rgb565" => "rgb565,",
+                                        nodem_mode = "rgb666" => "rgb666,",
+                                        nodem_mode = "rgb24"  => "rgb24,",
+                                        _ => "index1,"
+                                    }
+                                );                                                            
                                 #[cfg(feature = "std")]
-                                res.write_str("std").expect("");                                        
+                                let _ = res.write_str("std");                       
                                 #[cfg(not(feature = "std"))]
-                                res.write_str("core").expect("");                                           
-                                res.write_str(",control").expect("");                                        
+                                let _ = res.write_str("core");
+                                let _ = res.write_str(",control");
                                 #[cfg(feature = "inspect")]                             
-                                res.write_str(",inspect").expect("");                                                                                                                                                                  
+                                let _ = res.write_str(",inspect");
                                 #[cfg(feature = "dom")]
-                                res.write_str(",dom").expect("");                                        
+                                let _ = res.write_str(",dom");                         
                                 #[cfg(all(feature = "dom", feature = "xml"))]
-                                res.write_str(",xml").expect("");                                        
+                                let _ = res.write_str(",xml");                       
                                 #[cfg(feature = "ninepatch")]
-                                res.write_str(",ninepatch").expect("");
+                                let _ = res.write_str(",ninepatch").expect("");
                                 #[cfg(feature = "vm")]
-                                res.write_str(",vm").expect("");                                        
+                                let _ = res.write_str(",vm");
                                 #[cfg(all(feature = "vm", feature = "compile"))]
-                                res.write_str(",compile").expect("");                                        
-                                res.write_str("\r\n").expect("");                                
+                                let _ = res.write_str(",compile");
+                                let _ = res.write_str("\r\n");                                                                            
                                 Control::send_result("", Ret::Ok as u8, res).0;
                             },
                             "pkg"|"ota" => {

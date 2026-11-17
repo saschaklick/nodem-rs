@@ -66,7 +66,10 @@ impl SDL2Window {
             .build()
             .unwrap();   
             
-        let mut pixels: [u8; SCREEN_BUFFER_SIZE] = [0; SCREEN_BUFFER_SIZE];        
+        let mut pixels: [u8;SCREEN_BUFFER_SIZE] = [0;SCREEN_BUFFER_SIZE];  
+
+        #[cfg(nodem_mode = "rgb444")]
+        let mut frame: [u8;SCREEN_SIZE * 3] =  [0;SCREEN_SIZE * 3];      
         
         let mut nodem_surface = surface::Surface::new(addr_of_mut!(pixels), SCREEN_WIDTH, SCREEN_HEIGHT);        
 
@@ -157,8 +160,20 @@ impl SDL2Window {
                 nodem_mode = "rgb332" => {            
                     surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 * 1, PixelFormatEnum::RGB332).unwrap();                            
                 }
+                nodem_mode = "rgb444" => {
+                    for i in 0..SCREEN_SIZE * 3 {                        
+                        frame[i] = match i % 2 {
+                            0 => (pixels[i / 2] & 0xf0) << 0,
+                            _ => (pixels[i / 2] & 0x0f) << 4
+                        };
+                    }
+                    surface = Surface::from_data( &mut frame, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 * 3, PixelFormatEnum::RGB24).unwrap();                            
+                }
                 nodem_mode = "rgb565" => {                         
                     surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 * 2, PixelFormatEnum::RGB565).unwrap();                            
+                }
+                nodem_mode = "rgb555" => {                         
+                    surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 * 2, PixelFormatEnum::RGB555).unwrap();                            
                 }
                 nodem_mode = "rgb666" => {                                
                     pixels = pixels.map(|pixel| { pixel << 2 });
@@ -166,7 +181,7 @@ impl SDL2Window {
                 }
                 nodem_mode = "rgb24" => {                                
                     surface = Surface::from_data( &mut pixels, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, SCREEN_WIDTH as u32 * 3, PixelFormatEnum::RGB24).unwrap();                            
-                }
+                }                
                 _ => {                
                     const SDL_COLORS: [Color;2] = [Color::RGB(32, 32, 32), Color::RGB(196, 196, 196)];
                     let palette: Palette = Palette::with_colors(&SDL_COLORS).unwrap();

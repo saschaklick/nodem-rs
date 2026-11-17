@@ -369,11 +369,11 @@ impl DOM {
                             dom.set_padding(n_i, control::decode_values(value));
                         }                        
                         "background"=>{
-                            let value: ColorType = Color::parse(value).unwrap_or_else(|e| { log::error!("{}", e); return 0; } );                            
+                            let value: ColorType = Color::parse(value, &Color::COLORS).unwrap_or_else(|e| { log::error!("{}", e); return 0; } );                            
                             dom.request_style(n_i).set_background(value);
                         }
                         "color"=>{
-                            let value: ColorType = Color::parse(value).unwrap_or_else(|e| { log::error!("{}", e); return 1; } );                                                        
+                            let value: ColorType = Color::parse(value, &Color::COLORS).unwrap_or_else(|e| { log::error!("{}", e); return 1; } );                                                        
                             dom.request_style(n_i).set_color(value);
                         }
                         "border" | "frame"=>{        

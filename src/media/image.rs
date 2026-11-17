@@ -19,7 +19,7 @@ pub enum ImageType {
 
 pub const IMAGE_HEADER_SIZE: usize = 3;
 
-static DUMMY_IMAGE: [u8;8] = [ ImageType::Indexed1 as u8, 0x05, 0x05, Encoding::Raw as u8, 0b11111110, 0b01101011, 0b00111111, 0b00000000 ];
+static DUMMY_IMAGE: [u8;8] = [ ImageType::Indexed1 as u8, 0x05, 0x05, Encoding::Index1Raw as u8, 0b11111110, 0b01101011, 0b00111111, 0b00000000 ];
 
 pub struct Image<'a> {        
     pub source: u8,

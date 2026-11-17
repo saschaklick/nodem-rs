@@ -231,7 +231,7 @@ impl Media {
                         let mut img = BytesMut::new();
                         let mut byte = 0u8;
                         let mut mask = 0b10000000u8;
-                        img.put_u8(Encoding::Raw as u8);
+                        img.put_u8(Encoding::Index1Raw as u8);
                         for y in y_0 .. y_1 + 1 {
                             for x in x_0 .. x_1 + 1 {
                                 let pixel = &pixels[(y * width as usize + x) * 4 .. (y * width as usize + x) * 4 + 3];

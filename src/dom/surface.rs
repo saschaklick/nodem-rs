@@ -64,8 +64,8 @@ impl Surface {
 
                     p.x += margin.w as PosX;
                     p.y += margin.n as PosY;
-                    s.width = s.width.checked_sub((margin.e + margin.w) as SizeW).unwrap_or(0);
-                    s.height = s.height.checked_sub((margin.n + margin.s) as SizeH).unwrap_or(0);                                        
+                    s.width = s.width.saturating_sub((margin.e + margin.w) as SizeW);
+                    s.height = s.height.saturating_sub((margin.n + margin.s) as SizeH);                                        
                     
                     let clip_p = p_clips[p_i];                    
                     let clip_n = Clip {
@@ -74,8 +74,8 @@ impl Surface {
                             y : cmp::max( clip_p.p0.y, p.y)
                         },
                         p1 : Point {
-                            x : cmp::min( clip_p.p1.x, p.x.checked_add(s.width as PosX).unwrap_or(PosX::MAX)),
-                            y : cmp::min( clip_p.p1.y, p.y.checked_add(s.height as PosY).unwrap_or(PosY::MAX))
+                            x : cmp::min( clip_p.p1.x, p.x.saturating_add(s.width as PosX)),
+                            y : cmp::min( clip_p.p1.y, p.y.saturating_add(s.height as PosY))
                         }
                     };
                     if p_i < DOM_DEPTH_MAX as usize - 1 {                                                
