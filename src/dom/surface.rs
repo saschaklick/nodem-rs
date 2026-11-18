@@ -59,6 +59,9 @@ impl Surface {
 
                     let margin = dom.margins[node.plot.margin_idx as usize];                                        
                     let style = dom.styles[node.plot.style_idx as usize];
+
+                    let palette_org = self.palette;
+                    self.palette = [style.background, style.color];
                                         
                     log::trace!(" #{n_i:02} {} => [{:3}, {:3}] ({:3}, {:3})", node, s.width, s.height, p.x, p.y);                    
 
@@ -104,8 +107,8 @@ impl Surface {
                     self.media.typesetting.inverted = style.color == 0;
                     if style.font_idx < FONT_MAX {
                         self.media.typesetting.active_idx = style.font_idx;
-                    }
-                    
+                    }                    
+
                     if !hidden && node.plot.content_idx != CONTENT_MAX {
                         let content = dom.contents[node.plot.content_idx as usize];
                         if content.as_str().len() > 0 {
@@ -118,15 +121,17 @@ impl Surface {
                                 x: p.x.saturating_add(pad.w as PosX).saturating_add(if V_ALIGN == 0 { 0 } else { core::cmp::max(0, (s.width.saturating_sub(c.width) as PosX).saturating_sub(pad.w.saturating_add(pad.e) as PosX)) / if V_ALIGN != 2 { 2 } else { 1 } }),
                                 y: p.y.saturating_add(pad.n as PosY).saturating_add(if H_ALIGN == 0 { 0 } else { core::cmp::max(0, (s.height.saturating_sub(c.height) as PosY).saturating_sub(pad.n.saturating_add(pad.s) as PosY)) / if H_ALIGN != 2 { 2 } else { 1 } })                               
                             };
-                            self.clip = clip_p;
+                            self.clip = clip_p;                                                        
                             content.draw(self, position);                            
                             self.clip = clip_n;
                         }
                     }                     
                                         
                     if !hidden {                        
-                        self.draw_border(style.border_idx, Area{ point: p, size: s }, Some(&[style.background, style.color]));               
+                        self.draw_border(style.border_idx, Area{ point: p, size: s }, None);               
                     }
+
+                    self.palette = palette_org;
                     
                     if node.first_child == NODE_MAX {
                         descent = 1;                                              

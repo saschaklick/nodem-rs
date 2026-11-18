@@ -369,11 +369,11 @@ impl DOM {
                             dom.set_padding(n_i, control::decode_values(value));
                         }                        
                         "background"=>{
-                            let value: ColorType = Color::parse(value, &Color::COLORS).unwrap_or_else(|e| { log::error!("{}", e); return 0; } );                            
+                            let value: ColorType = Color::parse(value).unwrap_or_else(|e| { log::error!("{}", e); return 0; } );                            
                             dom.request_style(n_i).set_background(value);
                         }
                         "color"=>{
-                            let value: ColorType = Color::parse(value, &Color::COLORS).unwrap_or_else(|e| { log::error!("{}", e); return 1; } );                                                        
+                            let value: ColorType = Color::parse(value).unwrap_or_else(|e| { log::error!("{}", e); return 1; } );                                                        
                             dom.request_style(n_i).set_color(value);
                         }
                         "border" | "frame"=>{        
@@ -414,7 +414,7 @@ impl DOM {
         }    
         return err;
     }
-    
+
     #[cfg(all(feature = "dom", feature = "xml", feature = "inspect"))]
     pub fn to_xml(&mut self, xml: &mut dyn core::fmt::Write, pad: Option<&str>, incl_idx: bool) -> core::fmt::Result {                                             
         let mut p_stack: [NodeIdx; DOM_DEPTH_MAX] = [NODE_MAX; DOM_DEPTH_MAX];
@@ -506,11 +506,13 @@ impl DOM {
                 if style.font_idx != FONT_MAX {
                     xml.write_fmt(format_args!(" font={}", style.font_idx)).expect("");
                 }
-                if style.color != 1 {
-                    xml.write_fmt(format_args!(" color={}", style.color)).expect("");
+                if style.color != Color::COLORS[1] {
+                    xml.write_str(" color=").expect("");
+                    Color::write(style.color, xml);
                 }
                 if style.background != Color::TRANSPARENT {
-                    xml.write_fmt(format_args!(" background={}", style.background)).expect("");
+                    xml.write_str(" background=").expect("");
+                    Color::write(style.background, xml);
                 }
                 if node.visibility() == Visibility::Hidden {
                     xml.write_str(" visible=0").expect("");

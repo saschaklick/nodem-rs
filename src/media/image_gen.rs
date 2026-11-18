@@ -32,10 +32,10 @@ impl Media {
     }
 
     pub fn remove_image(&mut self, index: u8) {
-        self.import_image(index, "", b"", 0, 0, false, 0, 0);
+        self.import_image(index, "", b"", 0, 0, true, false, 0, 0);
     }
 
-    pub fn import_image(&mut self, index: u8, name: &str, pixels: &[u8], width: u8, height: u8, alpha: bool, threshold_0: u8, threshold_1: u8) {
+    pub fn import_image(&mut self, index: u8, name: &str, pixels: &[u8], width: u8, height: u8, monochrome: bool, alpha: bool, threshold_0: u8, threshold_1: u8) {
         let lib: BytesMut;
         unsafe {
             if IMAGE_IMPORT_LIB.is_none() {
@@ -46,25 +46,28 @@ impl Media {
             lib = IMAGE_IMPORT_LIB.take().unwrap();            
         }
 
-        
-        let mut colors: Vec<u32> = Vec::new();
-        for i in (0..pixels.len()).step_by(4) {
-            if pixels[i + 3] > 0 {
-                let rgba: u32 = (pixels[i + 0] as u32) << 0 | (pixels[i + 0] as u32) << 8 | (pixels[i + 0] as u32) << 16;
-                if !(colors.contains(&rgba)) { colors.push(rgba); }
-            }
-        }        
-        
-        let format = match colors.len() {
-            0 => {
-                log::error!("empty image");
-                return;
-            },
-            1..=2 => ImageType::Indexed1,
-            _ => ImageType::RGB888
+        let format = if monochrome == true { 
+            ImageType::Indexed1
+        }else{
+            let mut colors: Vec<u32> = Vec::new();
+            for i in (0..pixels.len()).step_by(4) {
+                if pixels[i + 3] > 0 {
+                    let rgba: u32 = (pixels[i + 0] as u32) << 0 | (pixels[i + 0] as u32) << 8 | (pixels[i + 0] as u32) << 16;
+                    if !(colors.contains(&rgba)) { colors.push(rgba); }
+                }
+            }        
+            
+            let format = match colors.len() {
+                0 => {
+                    log::error!("empty image");
+                    return;
+                },
+                1..=2 => ImageType::Indexed1,
+                _ => ImageType::RGB888
+            };
+            log::info!("amount of colors: {} -> {:?}", colors.len(), format);
+            format
         };
-
-        log::info!("amount of colors: {} -> {:?}", colors.len(), format);
 
         let mut data = BytesMut::new();
         let mut mask = BytesMut::new();

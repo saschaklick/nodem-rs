@@ -105,22 +105,23 @@ cfg_select! {
 }
 
 impl Color {
-    pub fn parse<'a>(str: &str, colors: &[ColorType]) -> Result<ColorType, &'a str> {
+    pub fn parse<'a>(str: &str) -> Result<ColorType, &'a str> {
         Ok(match str {
             ""|"transparent"  => Color::TRANSPARENT,            
             _ => {                                
                 let parse = str.parse::<ColorType>();
                 if parse.is_ok() {
-                    let value = parse.unwrap();
-                    if (value as usize) < colors.len() { 
-                        colors[value as usize]
-                    } else {
-                        return Err("malformed color index");
-                    }
+                    return Ok(parse.unwrap());
+                    // let value = parse.unwrap();
+                    // if (value as usize) < colors.len() { 
+                    //     colors[value as usize]
+                    // } else {
+                    //     return Err("malformed color index");
+                    // }
                 }else             
                 if str.starts_with("#") {
                     if str.len() == 4 {
-                        let nibs = [u8::from_str_radix(&str[1..4], 16).unwrap_or(0), u8::from_str_radix(&str[2..3], 16).unwrap_or(0), u8::from_str_radix(&str[3..4], 16).unwrap_or(0)];
+                        let nibs = [u8::from_str_radix(&str[1..2], 16).unwrap_or(0), u8::from_str_radix(&str[2..3], 16).unwrap_or(0), u8::from_str_radix(&str[3..4], 16).unwrap_or(0)];
                         Color::from_rgb(nibs[0] << 4 | nibs[0], nibs[1] << 4 | nibs[1], nibs[2] << 4 | nibs[2])
                     }else
                     if str.len() == 7 {
@@ -134,6 +135,15 @@ impl Color {
                 }
             }            
         })
+    }
+
+    pub fn write(color: ColorType, dest: &mut dyn core::fmt::Write) {
+        let rgb = Color::to_rgb(color);
+        if color == Color::TRANSPARENT {
+            let _ = dest.write_str("transparent");        
+        }else{
+            let _ = dest.write_fmt(format_args!("#{:02x}{:02x}{:02x}", rgb[0], rgb[1], rgb[2]));        
+        }
     }
 
     pub fn ensure_opacity(color: ColorType) -> ColorType {

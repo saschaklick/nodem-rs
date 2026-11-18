@@ -176,7 +176,7 @@ impl Media {
                             for value in values { page.put_i8(value); }
                         }                        
                         "background"=>{
-                            let _ = Color::parse(value, &Color::COLORS).inspect(|color|{
+                            let _ = Color::parse(value).inspect(|color|{
                                 let rgb = Color::to_rgb(*color);
                                 page.put_u8(PageInstruction::NodeBackground as u8 | (0xf << 4));                                                                                                                                    
                                 page.put_u8(rgb[0]);
@@ -186,7 +186,7 @@ impl Media {
                             });                            
                         }
                         "color"=>{
-                            let _ = Color::parse(value, &Color::COLORS).inspect(|color|{
+                            let _ = Color::parse(value).inspect(|color|{
                                 let rgb = Color::to_rgb(*color);
                                 page.put_u8(PageInstruction::NodeColor as u8 | (0xf << 4));                                                                                                                                    
                                 page.put_u8(rgb[0]);

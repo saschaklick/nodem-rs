@@ -81,7 +81,7 @@ impl Surface {
                             "col" | "bg" => {
                                 let color_n = if name == "col" { 1 } else { 0 };
                                 instruction[0] = crate::surface::COLOR as u8;
-                                let _ = Color::parse(value_str.unwrap_or("-").trim(), &Color::COLORS).inspect(|value| {                                    
+                                let _ = Color::parse(value_str.unwrap_or("-").trim()).inspect(|value| {                                    
                                     colors[color_n] = *value;
                                 }).inspect_err(|_|{                                    
                                     colors[color_n] = self.palette[color_n];                                    

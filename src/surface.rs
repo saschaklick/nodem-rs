@@ -53,6 +53,7 @@ impl Surface {
     }
 
     pub fn clear(self: &Self, color: ColorType) {        
+        if color == Color::TRANSPARENT { return; }
         self.fill_rect(Area { point: Point { x: 0, y: 0 }, size: Size { width: self.width, height: self.height } }, color);
     }
 
@@ -62,6 +63,7 @@ impl Surface {
     }
     
     pub fn draw_pixel(&self, p: Point, color: ColorType) {                                        
+        if color == Color::TRANSPARENT { return; }
         if p.x < self.clip.p0.x || p.y < self.clip.p0.y || p.x >= self.clip.p1.x || p.y >= self.clip.p1.y {
             return;
         }
@@ -70,6 +72,7 @@ impl Surface {
     }
     
     pub fn draw_hline(&self, p: Point, length: SizeW, color: ColorType) {    
+        if color == Color::TRANSPARENT { return; }
         if length <= 0 || p.y < 0 || p.y >= self.height as PosY {
             return;
         }
@@ -81,6 +84,7 @@ impl Surface {
     }
     
     pub fn draw_vline(&self, p: Point, length: SizeH, color: ColorType) {    
+        if color == Color::TRANSPARENT { return; }
         if length <= 0 || p.y < 0 || p.y >= self.height as PosY {
             return;
         }
@@ -92,6 +96,7 @@ impl Surface {
     }
     
     pub fn draw_rect(&self, a: Area, color: ColorType) {
+        if color == Color::TRANSPARENT { return; }
         if a.size.width >= 2 {
             self.draw_hline(a.point, a.size.width as SizeW, color);
             if a.size.height > 1 && a.size.height as PosY - 1 < self.height as PosY - a.point.y {
@@ -107,6 +112,7 @@ impl Surface {
     }
     
     pub fn fill_rect(&self, a: Area, color: ColorType) {
+        if color == Color::TRANSPARENT { return; }
         if a.size.width >= 1 && a.size.height > 0 {
             for y in cmp::max(a.point.y, 0) .. cmp::min(a.point.y + a.size.height as PosY, self.height as PosY) {                
                 self.draw_hline(Point { x: a.point.x, y }, a.size.width, color);
@@ -115,6 +121,7 @@ impl Surface {
     }
 
     pub fn draw_line(&self, p_0: Point, p_1: Point, color: ColorType) {
+        if color == Color::TRANSPARENT { return; }
         let dx = (p_1.x - p_0.x).abs();
         let sx = if p_0.x < p_1.x { 1 } else { -1 };
         let dy = -(p_1.y - p_0.y).abs();
@@ -158,7 +165,7 @@ impl Surface {
 impl Surface {
     cfg_select! {
         nodem_mode = "rgb332" => {
-            fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {           
+            fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {        
                 let pixel_i = p.y as usize * self.width as usize + p.x as usize;
                 let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };
                 if pixel_i < framebuffer.len() {                                    

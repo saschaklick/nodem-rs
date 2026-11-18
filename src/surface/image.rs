@@ -60,7 +60,7 @@ impl Surface {
                 break;
             }
             
-            if masked == 1 && color != Color::TRANSPARENT {                
+            if masked == 1 && color != Color::TRANSPARENT {
                 if inverted == true {
                     color = Color::invert(color);
                 }   

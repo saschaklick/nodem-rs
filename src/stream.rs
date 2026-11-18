@@ -5,8 +5,9 @@ use crate::{Color, ColorType};
 pub enum Encoding {
     Index1Raw      = 0x00,
     Index1RLEFixed = 0x01,
-    Rgb888Raw      = 0x10,
-    Rgb888RLEFixed = 0x11,
+    Index8Raw      = 0x10,
+    Rgb888Raw      = 0x20,
+    Rgb888RLEFixed = 0x21,    
     EOL
 }
 
@@ -181,8 +182,9 @@ impl <'a> PixelStream<'a> {
             match data[0] {
                 0x00 => Encoding::Index1Raw,
                 0x01 => Encoding::Index1RLEFixed,
-                0x10 => Encoding::Rgb888Raw,
-                0x11 => Encoding::Rgb888RLEFixed,
+                0x10 => Encoding::Index8Raw,
+                0x20 => Encoding::Rgb888Raw,
+                0x21 => Encoding::Rgb888RLEFixed,
                 _ => Encoding::EOL                
             }
         };                
@@ -192,13 +194,25 @@ impl <'a> PixelStream<'a> {
     }    
 
     pub fn with_encoding(encoding: Encoding, data: &'a [u8], palette: &'a [ColorType]) -> Self {
+        let pal_len = match encoding {
+            Encoding::Index8Raw => {                
+                data[0]
+            },
+            _ => 0
+        } as usize;
+        
+        let pos = match encoding {
+            Encoding::Index8Raw => 1 + pal_len * 3,                       
+            _ => 0
+        };
         let end = match encoding {
             Encoding::Index1Raw | Encoding::Index1RLEFixed => data.len() * 8,
-            Encoding::Rgb888Raw | Encoding::Rgb888RLEFixed => data.len(),            
+            Encoding::Rgb888Raw | Encoding::Rgb888RLEFixed => data.len(),
+            Encoding::Index8Raw => data.len().saturating_sub(1 + pal_len * 3),                       
             _ => data.len()
-        };        
+        };      
 
-        Self { encoding: encoding, data: data, palette: palette, ok: true, pos: 0, end: end, rpt_cnt: 0, rpt_val: 0, rpt_col: Color::TRANSPARENT, raw_cnt: 0 }
+        Self { encoding: encoding, data: data, palette: palette, ok: true, pos: pos, end: end, rpt_cnt: 0, rpt_val: 0, rpt_col: Color::TRANSPARENT, raw_cnt: 0 }
     }      
     
     pub fn next(&mut self) -> ColorType {
@@ -233,6 +247,11 @@ impl <'a> PixelStream<'a> {
                         ret
                     } as usize;
                     if color_no < self.palette.len() { self.palette[color_no] } else { Color::TRANSPARENT }
+                },
+                Encoding::Index8Raw => {                
+                    let color_pos = 1 + self.data[self.pos] as usize * 3;
+                    self.pos += 1;
+                    Color::from_rgb(self.data[color_pos + 0], self.data[color_pos + 1], self.data[color_pos + 2])                    
                 },
                 Encoding::Rgb888Raw => {                
                     let pos = self.pos * 3;

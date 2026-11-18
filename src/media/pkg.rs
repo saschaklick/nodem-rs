@@ -1,6 +1,7 @@
 use log;
 use core::fmt::Write;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
+use nostd::vec::Vec;
 
 use crate::media::{ *, font::*, image::* };
 
@@ -94,6 +95,29 @@ impl Media {
 
         Bytes::from(res)
     }
+
+    fn rgb888_to_index8 (source: &[u8]) -> Option<Bytes> {        
+        let mut res = BytesMut::new();
+        res.put_u8(Encoding::Index8Raw as u8);
+        
+        let pixels = |i: usize| &source[i * 3..i * 3 + 3];
+        let palette: Vec<_> = (0..source.len() / 3).filter(|&i| !(0..i).any(|j| pixels(j) == pixels(i))).map(|i| &source[i * 3..i * 3 + 3]).collect();   
+
+        if palette.len() > u8::MAX as usize {
+            return None;
+        }
+
+        res.put_u8(palette.len() as u8);
+        for color in &palette {
+            res.put_slice(color);
+        }        
+                
+        for i in 0..source.len() / 3 {            
+            res.put_u8(palette.iter().position(|n| *n == pixels(i)).unwrap_or(255) as u8);
+        }        
+
+        Some(Bytes::from(res))
+    }
     
     fn optimize_stream (source: &[u8], use_rle: bool) -> Bytes{                      
         if use_rle {
@@ -104,12 +128,19 @@ impl Media {
                     return res_rle;
                 }
             }else
-            if source[0] == Encoding::Rgb888Raw as u8 {
-                let res_rle = Media::rgb888_to_rle(&source[1..]);                
+            if source[0] == Encoding::Rgb888Raw as u8 {                
+                let rle = Media::rgb888_to_rle(&source[1..]);                
+                let in8 = Media::rgb888_to_index8(&source[1..]);                                               
+                
+                let in8_len = in8.as_ref().map_or(source.len() * 2, |n| n.len());
 
-                if source.len() > res_rle.len()   {              
-                    log::info!("rgb888 - raw: {:5} rle: {:5} rate: {:3.1}%", source.len(), res_rle.len(), res_rle.len() as f32 / source.len() as f32 * 100.0);                    
-                    return res_rle;
+                log::info!("rgb888 - raw: {:5} rle: {:5} ({:3.1}%) in8: {:5} ({:3.1}%)", source.len(), rle.len(), rle.len() as f32 / source.len() as f32 * 100.0, in8_len, in8_len as f32 / source.len() as f32 * 100.0);                    
+
+                if in8_len < rle.len() && in8_len < source.len() {
+                    return in8.unwrap();
+                }else
+                if rle.len() < source.len() {
+                    return rle;
                 }
             }
         }
