@@ -245,10 +245,12 @@ impl Media {
             f.put_u8(ninepatch.x_w);
             f.put_u8(ninepatch.y_h);
             for i in 0 .. 8 {
-                f.put_u8(ninepatch.data[i].len() as u8);
+                f.put_u16_ne(ninepatch.data[i].len() as u16);
+                f.put_u16_ne(ninepatch.mask[i].len() as u16);
             }
             for i in 0 .. 8 {
                 f.put(ninepatch.data[i]);
+                f.put(ninepatch.mask[i]);
             }
             if f.len() >= u16::MAX as usize{
                 log::error!("patch data #{index} too large");
