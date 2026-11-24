@@ -45,13 +45,17 @@ impl Media {
                                             w_w: values[3],
                                             x_w: values[4],
                                             y_h: values[5],
-                                            data: [&[]; 8]                                            
+                                            data: [&[]; 8],
+                                            mask: [&[]; 8]                                           
                                         };
-                                        let mut pos: usize = reader.get_pos() + 8;
+                                        let mut pos: usize = reader.get_pos() + 16 + 16;
                                         for i in 0 .. 8 {                                                              
-                                            let data_len = reader.read_u8() as usize;                                        
+                                            let data_len = reader.read_u16() as usize;                                        
                                             ninepatch.data[i] = &data[pos..pos + data_len];                                            
                                             pos += data_len;
+                                            let mask_len = reader.read_u16() as usize;                                        
+                                            ninepatch.mask[i] = &data[pos..pos + mask_len];                                            
+                                            pos += mask_len;
                                         }                                
                                         ninepatch
                                     };

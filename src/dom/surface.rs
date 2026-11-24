@@ -81,9 +81,8 @@ impl Surface {
                             y : cmp::min( clip_p.p1.y, p.y.saturating_add(s.height as PosY))
                         }
                     };
-                    if p_i < DOM_DEPTH_MAX as usize - 1 {                                                
+                    if p_i < DOM_DEPTH_MAX as usize - 1 {                                                                        
                         let pad = dom.full_padding(*node, self);
-                        
                         p_clips[p_i + 1] = Clip {
                             p0 : Point {
                                 x : clip_n.p0.x + pad.w as PosX,
@@ -91,20 +90,34 @@ impl Surface {
                             },
                             p1 : Point {
                                 x : clip_n.p1.x - pad.e as PosX,
-                                y : clip_n.p1.y - pad.s as PosY,
+                                y : clip_n.p1.y - pad.s as PosY,                                
                             }
                         };
                     };                    
                     let clip_p = p_clips[p_i + 1];                   
                     self.clip = clip_n;
 
-                    let hidden= node.visibility() == Visibility::Hidden;
+                    let hidden = node.visibility() == Visibility::Hidden;
 
-                    if !hidden && style.background != Color::TRANSPARENT {
-                        self.fill_rect(Area { point: p, size : s }, style.background);
+                    if !hidden && style.background != Color::TRANSPARENT {                        
+                        self.fill_rect(if style.border_idx == BORDER_RECT {
+                            Area {
+                                point: Point { x: p.x.saturating_add(1), y: p.y.saturating_add(1) },
+                                size: Size { width: s.width.saturating_sub(2), height: s.height.saturating_sub(2) },
+                            }    
+                        }else
+                        if style.border_idx < BORDER_MAX || style.border_idx == 254 {
+                            let b = self.media.get_border(media::Identifier::Index(style.border_idx));                                            
+                            Area {
+                                point: Point { x: p.x.saturating_add(b.w_w as PosX), y: p.y.saturating_add(b.n_h as PosY) },
+                                size: Size { width: s.width.saturating_sub((b.e_w + b.w_w) as SizeW), height: s.height.saturating_sub((b.n_h + b.s_h) as SizeH) },
+                            }    
+                        }else{
+                            Area { point: p, size: s }
+                        }, style.background);          
                     }                                        
                                     
-                    self.media.typesetting.inverted = style.color == 0;
+                    self.media.typesetting.inverted = false;
                     if style.font_idx < FONT_MAX {
                         self.media.typesetting.active_idx = style.font_idx;
                     }                    
@@ -128,7 +141,7 @@ impl Surface {
                     }                     
                                         
                     if !hidden {                        
-                        self.draw_border(style.border_idx, Area{ point: p, size: s }, None);               
+                        self.draw_border(style.border_idx, Area{ point: p, size: s }, None);                                       
                     }
 
                     self.palette = palette_org;
