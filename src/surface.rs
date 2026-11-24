@@ -55,6 +55,14 @@ impl Surface {
     pub fn clear(self: &Self, color: ColorType) {        
         if color == Color::TRANSPARENT { return; }
         self.fill_rect(Area { point: Point { x: 0, y: 0 }, size: Size { width: self.width, height: self.height } }, color);
+        #[cfg(feature = "stencil")]
+        self.set_stencil(false);
+    }
+
+    #[cfg(feature = "stencil")]
+    pub fn set_stencil(self: &Self, clear: bool) {
+        let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };
+        framebuffer[SCREEN_BUFFER_SIZE..].fill(if clear { 0xff } else { 0x00 });
     }
 
     pub fn set_clip(&mut self, p_0: Point, p_1: Point) {
@@ -163,65 +171,59 @@ impl Surface {
 }
 
 impl Surface {
-    cfg_select! {
-        nodem_mode = "rgb332" => {
-            fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {        
-                let pixel_i = p.y as usize * self.width as usize + p.x as usize;
-                let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };
+    fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {        
+        let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };
+        let pixel_i = p.y as usize * self.width as usize + p.x as usize;
+
+        cfg_select! {
+            nodem_mode = "rgb332" => {                                            
                 if pixel_i < framebuffer.len() {                                    
                     framebuffer[pixel_i] = color;            
                 }
-            }
-        }
-        nodem_mode = "rgb444" => {
-            fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {           
-                let pixel_i = (p.y as usize * self.width as usize + p.x as usize) * 3;
-                let byte = pixel_i / 2;                
-                let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };                
-                if byte < framebuffer.len() {                                                        
-                    if pixel_i % 2 == 0 {
-                        framebuffer[byte + 0] = (color >> 4) as u8;
-                        framebuffer[byte + 1] = (framebuffer[byte + 1] & 0x0f) | (color << 4) as u8;
-                    }else{
-                        framebuffer[byte + 0] = (framebuffer[byte + 0] & 0xf0) | (color >> 8) as u8;
-                        framebuffer[byte + 1] = (color >> 0) as u8;                        
-                    }                    
-                }
-            }
-        }    
-        any(nodem_mode = "rgb555", nodem_mode = "rgb565") => {
-            fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {           
-                let pixel_i = (p.y as usize * self.width as usize + p.x as usize) * 2;
-                let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };
+            }        
+            nodem_mode = "rgb444" => {                        
+                let byte = pixel_i * 3 / 2;                                
+                if pixel_i % 2 == 0 {
+                    framebuffer[byte + 0] = (color >> 4) as u8;
+                    framebuffer[byte + 1] = (framebuffer[byte + 1] & 0x0f) | (color << 4) as u8;
+                }else{
+                    framebuffer[byte + 0] = (framebuffer[byte + 0] & 0xf0) | (color >> 8) as u8;
+                    framebuffer[byte + 1] = (color >> 0) as u8;                        
+                }                                    
+            }    
+            any(nodem_mode = "rgb555", nodem_mode = "rgb565") => {            
+                let p_i = pixel_i * 2;                
                 if pixel_i < framebuffer.len() {                                    
-                    framebuffer[pixel_i + 0] = (color >> 0) as u8;            
-                    framebuffer[pixel_i + 1] = (color >> 8) as u8;            
+                    framebuffer[p_i + 0] = (color >> 0) as u8;            
+                    framebuffer[p_i + 1] = (color >> 8) as u8;            
                 }
-            }
-        }    
-        any(nodem_mode = "rgb666", nodem_mode = "rgb24") => {
-            fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {           
-                let pixel_i = (p.y as usize * self.width as usize + p.x as usize) * 3;
-                let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };
+            }        
+            any(nodem_mode = "rgb666", nodem_mode = "rgb24") => {
+                let p_i = pixel_i * 3;                
                 if pixel_i + 2 < framebuffer.len() {                                    
-                    framebuffer[pixel_i + 0] = (color >> 0) as u8;
-                    framebuffer[pixel_i + 1] = (color >> 8) as u8;
-                    framebuffer[pixel_i + 2] = (color >> 16) as u8;
+                    framebuffer[p_i + 0] = (color >> 0) as u8;
+                    framebuffer[p_i + 1] = (color >> 8) as u8;
+                    framebuffer[p_i + 2] = (color >> 16) as u8;
                 }
             }
-        }
-        _ => {        
-            fn draw_pixel_unsafe(&self, p: Point, color: ColorType) {           
-                let pixel_i = p.y as usize * self.width as usize + p.x as usize;        
-                let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };
-                if pixel_i / 8 < framebuffer.len() {
+            _ => {                                        
+                let p_i = pixel_i / 8;                
+                if p_i < framebuffer.len() {
+                    let p_m = pixel_i % 8;
                     if color == 0 || (color == Color::DITHER && (p.x + p.y as PosX) % 2 == 0){                        
-                        { framebuffer[pixel_i / 8] &= !(1 << (7 - (pixel_i % 8))); }                                    
+                        { framebuffer[p_i] &= !(1 << (7 - p_m)); }                                    
                     }else{                
-                        { framebuffer[pixel_i / 8] |= 1 << (7 - (pixel_i % 8)); }                
+                        { framebuffer[p_i / 8] |= 1 << (7 - p_m); }                
                     }
                 }
+            } 
+        }
+        
+        #[cfg(feature = "stencil")] {
+            let s_i = SCREEN_BUFFER_SIZE + (pixel_i / 8);
+            if s_i < framebuffer.len() {
+                framebuffer[s_i] |= 1 << (7 - (pixel_i % 8))
             }
-        } 
+        }
     }
 }

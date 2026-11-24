@@ -3,7 +3,7 @@ use core::fmt::Write;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use nostd::vec::Vec;
 
-use crate::media::{ *, font::*, image::* };
+use crate::media::{ *, font::* };
 
 const PKG_HEADER: &str = "PKG0";
 

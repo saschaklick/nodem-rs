@@ -25,6 +25,7 @@ ui = []
 term = []
 base = ["dom", "xml", "ninepatch", "inspect"]
 demo = []
+stencil = []
 
 [dependencies]
 log = "0.4.27"

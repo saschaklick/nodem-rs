@@ -27,14 +27,15 @@ pub use u8      as IdIdx;
 pub const SCREEN_WIDTH:  SizeW = 128;
 pub const SCREEN_HEIGHT: SizeH = 64;
 
-pub const SCREEN_SIZE:        usize = SCREEN_WIDTH as usize * SCREEN_HEIGHT as usize;
-pub const SCREEN_BUFFER_SIZE: usize = (SCREEN_SIZE * Color::BITS_PER_PIXEL) / 8;
+pub const SCREEN_SIZE:         usize = SCREEN_WIDTH as usize * SCREEN_HEIGHT as usize;
+pub const SCREEN_BUFFER_SIZE:  usize = (SCREEN_SIZE * Color::BITS_PER_PIXEL + 7) / 8;
+pub const STENCIL_BUFFER_SIZE: usize = (SCREEN_SIZE + 7) / 8;
 
 pub const SURFACE_WIDTH:  SizeW = SCREEN_WIDTH;
 pub const SURFACE_HEIGHT: SizeH = SCREEN_HEIGHT;
 
 pub const SURFACE_SIZE:       usize = SCREEN_WIDTH as usize * SCREEN_HEIGHT as usize;
-pub const SURFACE_BUFFER_SIZE:usize = (SURFACE_SIZE * Color::BITS_PER_PIXEL) / 8;
+pub const SURFACE_BUFFER_SIZE:usize = (SURFACE_SIZE * Color::BITS_PER_PIXEL + 7) / 8;
 
 pub const LIBRARY_MAX:   LibraryIdx  = 4;
 
