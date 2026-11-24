@@ -32,15 +32,18 @@ static PROGRAM: &str = "
     WHILE 1        
         TEXT$ = MID$(FULLTEXT$, 19, 19) + \"{br}   (\" + STR$(X) + \"/\" + STR$(Y) +  \")\"
         T_W, T_H = surface.get_text_size(FONT, TEXT$)
-        surface.clear(1)       
-        surface.fill_rect(X - 1, Y - 1, T_W + 2, T_H + 2, 0)                
-        surface.draw_text(X, Y, FONT, TEXT$)
-        IF X >= S_W - (T_W + 2) THEN D_X = -1
-        IF X <= 0 THEN D_X = 1
-        IF Y >= S_H - (T_H + 2) THEN D_Y = -1
-        IF Y <= 0 THEN D_Y = 1
+        COLOR #fff, #66f
+        CLS
+        surface.fill_rect(X, Y, T_W + 2, T_H + 2, #00f)                
+        surface.set_color(1, #0f0)
+        surface.draw_text(X + 1, Y + 1, FONT, TEXT$)
         X = X + D_X        
         Y = Y + D_Y       
+        IF X >= S_W - T_W - 2 THEN D_X = -1
+        IF X < 1 THEN D_X = 1
+        IF Y >= S_H - T_H - 2 THEN D_Y = -1
+        IF Y < 1 THEN D_Y = 1
+        
         HALT
     WEND
 ";
@@ -156,10 +159,12 @@ impl Example {
 
         surface.media.typesetting.mono_spaced = Alignment::Center;                
         if unsafe { VM_MONITOR } {
+            surface.palette = Color::COLORS;
             surface.clear(0);    
             surface.draw_text(Identifier::Index(0), &buf.to_ascii_uppercase(), Point { x: 0, y: 0 });
         }
         if unsafe { SHOW_CONTROLS } {
+            surface.palette = Color::COLORS;
             surface.fill_rect(Area { point: Point { x: 72 - 1, y: 39 - 1}, size: Size { width: 128 - 72 + 1, height: 64 - 39 + 1 } }, 0);
             surface.draw_text(Identifier::Index(0), &controls.trim(), Point { x: 72, y: 39 });        
         }
