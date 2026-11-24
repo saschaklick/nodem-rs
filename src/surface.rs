@@ -215,8 +215,8 @@ impl Surface {
                 let pixel_i = p.y as usize * self.width as usize + p.x as usize;        
                 let framebuffer = unsafe { self.framebuffer.as_mut().unwrap() };
                 if pixel_i / 8 < framebuffer.len() {
-                    if color == 0 {                        
-                        { framebuffer[pixel_i / 8] &= !(1 << (7 - (pixel_i % 8))); }                
+                    if color == 0 || (color == Color::DITHER && (p.x + p.y as PosX) % 2 == 0){                        
+                        { framebuffer[pixel_i / 8] &= !(1 << (7 - (pixel_i % 8))); }                                    
                     }else{                
                         { framebuffer[pixel_i / 8] |= 1 << (7 - (pixel_i % 8)); }                
                     }

@@ -95,10 +95,11 @@ cfg_select! {
             pub const MODE: ColorMode = ColorMode::Index1;
             pub const BITS_PER_PIXEL: usize = 1;
             pub const COLORS: [ColorType;2] = [0b0, 0b1];
+            pub const DITHER: ColorType = 0b11111110; 
             pub const TRANSPARENT: ColorType = 0b11111111; 
-            pub const TRANSPARENT_ALT: ColorType = 0b00000001;        
+            pub const TRANSPARENT_ALT: ColorType = 0b00000001;      
             pub fn invert(color: ColorType) -> ColorType { return if color > 0 { 0b0 } else { 0b1 }; }            
-            pub fn from_rgb(r: u8, g: u8, b: u8) -> ColorType { return if ((r >> 2) + (g >> 2) + (b >> 2)) > 16 { 0b1 } else { 0b0 }; }
+            pub fn from_rgb(r: u8, g: u8, b: u8) -> ColorType { let med = (r >> 2) + (g >> 2) + (b >> 2); return if med > 148 { 0b1 } else if med < 48 { 0b0 } else { Color::DITHER }; }
             pub fn to_rgb(color: ColorType) -> [u8;3] { return if color == 0 { [ 0x00, 0x00, 0x00 ] } else { [ 0xff, 0xff, 0xff ] }; }
         }        
     }
