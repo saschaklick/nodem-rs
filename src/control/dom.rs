@@ -46,14 +46,14 @@ impl IControl for DOM {
                                     _ => node::Alignment::Start
                                 }); }
                                 "visible"    => { node.set_visibility( if values[0] == 0 { node::Visibility::Hidden } else { node::Visibility::Visible }); }
-                                "font"       => { let _ = value.parse::<FontIdx>().map(|value|{ dom.request_style(node_i).set_font(value); }); }
-                                "color"      => { let _ = Color::parse(value).map(|value|{ dom.request_style(node_i).set_color(value); }); }
-                                "background" => { let _ = Color::parse(value).map(|value|{ dom.request_style(node_i).set_background(value); }); }
+                                "font"       => { let _ = value.parse::<FontIdx>().inspect(|value|{ dom.request_style(node_i).set_font(*value); }); }
+                                "color"      => { let _ = Color::parse(value).inspect(|value|{ dom.request_style(node_i).set_color(*value); }); }
+                                "background" => { let _ = Color::parse(value).inspect(|value|{ dom.request_style(node_i).set_background(*value); }); }
                                 "border"     => {                                
                                     if value.eq_ignore_ascii_case("solid") {
                                         dom.request_style(node_i).set_border(BORDER_RECT);
                                     }else{
-                                        let _ = value.parse::<BorderIdx>().map(|value|{ dom.request_style(node_i).set_border(value); });
+                                        let _ = value.parse::<BorderIdx>().inspect(|value|{ dom.request_style(node_i).set_border(*value); });
                                     }                                        
                                 }
                                 _ => { ret = Ret::InvalidProperty; }
