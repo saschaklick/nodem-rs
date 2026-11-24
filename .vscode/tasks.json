@@ -65,7 +65,7 @@
 			"env": {				
 				"RUST_BACKTRACE": "1",
 				"NODEM_ARCH": "EXAMPLE",
-				"RUSTFLAGS":"--cfg nodem_mode=\"rgb555\""
+				"RUSTFLAGS":"--cfg nodem_mode=\"rgb24\""
 			},
 			"problemMatcher": [
 				"$rustc"
@@ -114,11 +114,12 @@
 			"args": [
 				"--example",
 				"vm",
-				"--features=ui,dom,vm,compile,basic,alloc"
+				"--features=ui,dom,ninepatch,vm,compile,basic,alloc"
 			],
 			"env": {
 				"RUST_BACKTRACE": "1",
 				"NODEM_ARCH": "EXAMPLE",
+				"RUSTFLAGS":"--cfg nodem_mode=\"rgb24\""
 			},
 			"problemMatcher": [
 				"$rustc"
