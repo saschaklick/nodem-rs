@@ -56,21 +56,6 @@ impl RuntimePrivate {
         surface.draw_rect(Area { point: Point { x: point.x + 1, y: point.y + 1 }, size: Size { width: size.width - 2, height: size.height - 2 } }, 1);        
         surface.draw_text(media::Identifier::Index(font), message, Point { x: 4, y: point.y + 4 });
     }
-
-    #[cfg(feature = "demo")]
-    fn demo_popup (surface: &mut Surface, loop_cnt: usize) {            
-        if (loop_cnt % 400) > 350 {
-            let text = "DEMO";
-            let size = surface.get_text_size(Identifier::Index(0), text);
-            surface.fill_rect(Area { point: Point { x: 0, y: 0 }, size: Size { width: size.width + 1, height: size.height + 1 } }, 0);        
-            surface.draw_text(Identifier::Index(0), text, Point { x: 0, y: 0 });
-        }
-    }
-
-    #[cfg(feature = "demo")]
-    fn cursor (surface: &mut Surface, point: Point) {
-        surface.draw_image(Identifier::Index(SYS_POINTER), point, None);
-    }       
 }
 
 pub static PKG_SYS: &'static [u8] = include_bytes!("sys.pkg");
@@ -83,6 +68,38 @@ pub trait Runtime {
     fn process_command(&mut self, input: &[u8], res: &mut dyn core::fmt::Write, external_listener: &mut dyn IControl) -> (usize, core::fmt::Result);
 }
 
+struct Demo {
+    activate: bool 
+}
+
+#[cfg(feature = "demo")]
+impl Demo {
+    fn popup (&self, surface: &mut Surface, loop_cnt: usize) {                    
+        if (loop_cnt % 400) > 350 {
+            let text = "DEMO";
+            let size = surface.get_text_size(Identifier::Index(0), text);
+            surface.fill_rect(Area { point: Point { x: 0, y: 0 }, size: Size { width: size.width + 1, height: size.height + 1 } }, 0);        
+            surface.draw_text(Identifier::Index(0), text, Point { x: 0, y: 0 });
+        }        
+    }
+    
+    fn cursor (&self, surface: &mut Surface, point: Point) {
+        surface.draw_image(Identifier::Index(SYS_POINTER), point, None);
+    }       
+}
+
+impl IControl for Demo {    
+    fn process_line(&mut self, line: &str, _media: &Media, res: &mut dyn core::fmt::Write) -> (bool, core::fmt::Result) {                                    
+        if line == "demo" {
+            self.activate = !self.activate;
+            let _ = res.write_str("0");
+            (true, Ok(()))
+        }else{
+            (false, Ok(()))
+        }
+    }
+}
+
 pub struct Env <'a>{
     loop_cnt: usize,
     pub status_message: Option<&'a str>,
@@ -91,6 +108,9 @@ pub struct Env <'a>{
     #[cfg(feature = "dom")]
     pub dom: dom::DOM,    
     pub control: Option<Control>,
+
+    #[cfg(feature = "demo")]
+    demo: Demo,
 
     #[cfg(feature = "vm")]
     pub vm: VirtMach<'a>,    
@@ -101,7 +121,7 @@ pub struct Env <'a>{
     /// Asked once per frame before the vm runs; returning false skips the vm for this frame
     /// (rendering carries on). Lets a platform honor time waits and the time tick.
     #[cfg(feature = "vm")]
-    pub vm_gate: Option<fn(&VirtMach) -> bool>
+    pub vm_gate: Option<fn(&VirtMach) -> bool>    
 }
 
 impl Env<'_> {
@@ -113,6 +133,8 @@ impl Env<'_> {
             #[cfg(feature = "dom")]
             dom: dom::DOM::default(),
             control: Some(Control::default()),
+            #[cfg(feature = "demo")]
+            demo: Demo { activate: false },
             #[cfg(feature = "vm")]
             vm: VirtMach::new(),
             #[cfg(feature = "vm")]
@@ -203,7 +225,7 @@ impl Runtime for Env<'_> {
                 // Opt-in: redrawn every frame, so on a display where each frame costs a physical
                 // refresh (e-paper) even a static page would never stop refreshing.
                 #[cfg(feature = "demo")]
-                {
+                if self.demo.activate {
                     // let x = (self.surface.width as f32 / 2.0) + (((self.loop_cnt as f32) / 10.0).cos() * self.surface.width as f32 / 2.5);
                     // let y = (self.surface.height as f32 / 2.0) + (((self.loop_cnt as f32) / 10.0).sin() * self.surface.height as f32 / 2.5);
                     // Integer motion, no trig: x slides 0..32 and back (a triangle wave, 64
@@ -218,14 +240,16 @@ impl Runtime for Env<'_> {
                     let u = t % (2 * HALF);
                     let (u, dir) = if u < HALF { (u, -1) } else { (u - HALF, 1) };
                     let y = dir * ((4 * SWING * u * (HALF - u) + HALF * HALF / 2) / (HALF * HALF));
-                    RuntimePrivate::cursor(&mut self.surface, Point { x: x as PosX, y: y as PosY });
+                    self.demo.cursor(&mut self.surface, Point { x: x as PosX, y: y as PosY });
                 }
             }
 
             #[cfg(feature = "demo")]
-            RuntimePrivate::demo_popup(&mut self.surface, self.loop_cnt);
+            if self.demo.activate {
+                self.demo.popup(&mut self.surface, self.loop_cnt);
+            }
             
-            if self.status_message.is_some() {
+            if self.status_message.is_some() && self.surface.width >= 96 && self.surface.height >= 16 {
                 RuntimePrivate::popup(&mut self.surface, self.status_message.unwrap());            
             }
         }
@@ -239,7 +263,7 @@ impl Runtime for Env<'_> {
         return self.loop_cnt;
     }
 
-    fn process_command(&mut self, input: &[u8], mut res: &mut dyn core::fmt::Write, external_listener: &mut dyn IControl) -> (usize, core::fmt::Result) {
+    fn process_command(&mut self, input: &[u8], mut res: &mut dyn core::fmt::Write, external_listener: &mut dyn IControl) -> (usize, core::fmt::Result) {        
         if self.control.is_some() {            
             self.control.as_mut().unwrap().process(input, &mut self.surface, &mut [
                 Some(external_listener),
@@ -251,7 +275,7 @@ impl Runtime for Env<'_> {
                 None,
                  #[cfg(feature = "vm")]
                 Some(&mut self.vm),
-                None
+                Some(&mut self.demo)
             ], &mut res)           
         }else{
             log::error!("no listener available");
