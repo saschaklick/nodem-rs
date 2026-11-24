@@ -3,20 +3,23 @@ use crate::dom::*;
 use crate::surface::*;
 use crate::media::font::Settings;
 
-impl DOM {
+impl DOM {    
     pub(crate) fn full_padding (&self, node: Node, surface: &Surface) -> Padding {
         let p = self.paddings[node.plot.padding_idx as usize];                        
         if node.framing() {
             let border_idx = self.styles[node.plot.style_idx as usize].border_idx;
+            if border_idx == BORDER_RECT {
+                Padding { n: p.n.saturating_add(2), e: p.e.saturating_add(2), s: p.s.saturating_add(2), w: p.w.saturating_add(2) }
+            }else
             if border_idx < BORDER_MAX || border_idx == 254 {
                 #[cfg(feature = "ninepatch")]
                 {
                     let b = surface.media.get_border(media::Identifier::Index(border_idx));                
-                    return Padding { n: p.n.saturating_add(b.n_h as i8) + 1, e: p.e.saturating_add(b.e_w as i8) + 1, s: p.s.saturating_add(b.s_h as i8) + 1, w: p.w.saturating_add(b.w_w as i8) + 1 };
+                    return Padding { n: p.n.saturating_add(b.n_h as Offset) + 1, e: p.e.saturating_add(b.e_w as Offset) + 1, s: p.s.saturating_add(b.s_h as Offset) + 1, w: p.w.saturating_add(b.w_w as Offset) + 1 };
                 }
                 #[cfg(not(feature = "ninepatch"))]
                 p
-            }else{
+            }else{            
                 p
             }
         }else{
