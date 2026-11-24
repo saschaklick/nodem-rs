@@ -213,7 +213,7 @@ impl Surface {
                     if color == 0 || (color == Color::DITHER && (p.x + p.y as PosX) % 2 == 0){                        
                         { framebuffer[p_i] &= !(1 << (7 - p_m)); }                                    
                     }else{                
-                        { framebuffer[p_i / 8] |= 1 << (7 - p_m); }                
+                        { framebuffer[p_i] |= 1 << (7 - p_m); }                
                     }
                 }
             } 
