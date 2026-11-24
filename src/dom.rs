@@ -96,7 +96,8 @@ pub struct DOM {
     
     dummy_node: Node,
     #[cfg(feature = "alloc")]
-    alloc_buf:  DOMContainer
+    alloc_buf:  DOMContainer,    
+    pub reload: bool
 }
 impl Default for DOM {
     fn default() -> Self { DOM {
@@ -116,7 +117,8 @@ impl Default for DOM {
 
         dummy_node: Node::default(),        
         #[cfg(feature = "alloc")]
-        alloc_buf: DOMContainer { raw: core::ptr::null_mut(), len: 0 }
+        alloc_buf: DOMContainer { raw: core::ptr::null_mut(), len: 0 },        
+        reload: false
     } }
 }
 

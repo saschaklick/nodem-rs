@@ -207,12 +207,18 @@ impl Runtime for Env<'_> {
                 #[cfg(feature = "dom")]
                 {
                     #[cfg(feature = "vm")]
-                    match self.vm.state {
-                        virtmach::Runtime::Ini | virtmach::Runtime::Stp => {
-                            self.surface.clear(0);
-                            self.surface.update(&mut self.dom); 
+                    {
+                        if self.dom.reload == true {
+                            self.vm.reset();
+                            self.dom.reload = false;
                         }
-                        _ => {}
+                        match self.vm.state {
+                            virtmach::Runtime::Ini | virtmach::Runtime::Stp => {
+                                self.surface.clear(0);
+                                self.surface.update(&mut self.dom); 
+                            }
+                            _ => {}
+                        }
                     }
                     #[cfg(not(feature = "vm"))]
                     {
@@ -273,10 +279,10 @@ impl Runtime for Env<'_> {
                 Some(&mut self.dom),
                 #[cfg(not(feature = "vm"))]
                 None,
-                 #[cfg(feature = "vm")]
+                #[cfg(feature = "vm")]
                 Some(&mut self.vm),
                 Some(&mut self.demo)
-            ], &mut res)           
+            ], &mut res)
         }else{
             log::error!("no listener available");
             (input.len(), Ok(()))

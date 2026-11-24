@@ -87,7 +87,7 @@ impl IControl for DOM {
                         self.from(page.content);
                         match page.source {
                             255 => Ret::InvalidSource,
-                            _ => Ret::Ok
+                            _ => { self.reload = true; Ret::Ok }
                         }
                     },
                     Err(_) => Ret::InvalidArgument                              
